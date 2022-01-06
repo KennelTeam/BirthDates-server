@@ -1,3 +1,5 @@
+import concurrent
+from concurrent import futures
 import requests
 import json
 from bs4 import BeautifulSoup
@@ -77,22 +79,29 @@ def get_product_data(asin: str):
         'price': product_price,
         'ratings_count': product_ratings_count,
         'rating': product_rating,
+        'asin': asin,
         'category': None
     }
 
     return product
 
 
+THREADS = 10
+
 with open('links_normal.txt') as f:
-    for index, asin_number in enumerate(f.readlines()):
-        print(index, end=' ')
-        try:
-            data = get_product_data(asin=asin_number)
-        except Exception as e:
-            print(e)
-            data = None
-        if data is not None:
-            keywords = get_keywords(data['title'] + '\n' + data['description'])
-            add_product(asin_number, data['price'], data['title'], data['description'], data['ratings_count'],
-                        data['rating'], keywords)
+    source = f.readlines()
+    for i in range(0, len(source), THREADS):
+        print(i, end=' ')
+        with concurrent.futures.ThreadPoolExecutor(max_workers=THREADS) as executor:
+            future_to_data = (executor.submit(get_product_data, asin)
+                             for asin in source[i:min(i + THREADS, len(source))])
+
+            for future in concurrent.futures.as_completed(future_to_data):
+                data = future.result()
+                if data:
+                    if data is not None:
+                        keywords = get_keywords(data['title'] + '\n' + data['description'])
+                        add_product(data['asin'], data['price'], data['title'], data['description'],
+                                    data['ratings_count'],
+                                    data['rating'], keywords)
 
