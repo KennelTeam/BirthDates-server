@@ -41,6 +41,16 @@ class Product(Base):
         self.reviews_count = reviews_count
         self.avg_rating = avg_rating
 
+    def to_json(self):
+        return {
+            "asin": self.amazon_id,
+            "cost": self.cost,
+            "name": self.name,
+            "description": self.description,
+            "reviews_count": self.reviews_count,
+            "avg_rating": self.avg_rating
+        }
+
 
 class ProductKeyword(Base):
     __tablename__ = 'product_keyword'
