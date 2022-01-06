@@ -4,6 +4,16 @@ from bs4 import BeautifulSoup
 from add_product import add_product
 from keywords import get_keywords
 from tqdm import tqdm
+from random import choice
+import re
+from requesting import get
+
+
+proxies_html = requests.get('https://free-proxy-list.net/', headers={'User-Agent':'Mozilla/5.0'})
+proxies_soup = BeautifulSoup(proxies_html.text,"lxml")
+# print(res.text)
+for item in proxies_soup.find_all("textarea"):
+  proxies = item.text.split('\n')[3:]
 
 base_url = 'https://www.amazon.com/dp/'
 
@@ -14,14 +24,14 @@ with open('headers.json') as hf:
 def get_product_data(asin: str):
     url = base_url + asin
     print(url, end='')
-    resp = requests.get(url, headers=headers)
-
-    if 'To discuss automated access to Amazon data please contact' in resp.text:
+    # resp = requests.get(url, headers=headers, proxies={"https": "129.159.133.74:8080", "http": "129.159.133.74:8080"}).text
+    resp = get(url)
+    if 'To discuss automated access to Amazon data please contact' in resp:
         print("BAN!")
-        print(resp.text)
+        # print(resp.text)
         return None
 
-    soup = BeautifulSoup(resp.text, 'html.parser')
+    soup = BeautifulSoup(resp, 'html.parser')
 
     root = soup.find(id='ppd')
 
@@ -43,6 +53,9 @@ def get_product_data(asin: str):
         return
 
     price = product_price.split('.')
+    price[0] = re.sub('\D', '', price[0])
+    price[1] = re.sub('\D', '', price[1])
+
     product_price = str(int(price[0]) * 100 + int(price[1]))
 
     product_title = root.find(id='productTitle').text.strip()
@@ -75,7 +88,8 @@ with open('links_normal.txt') as f:
         print(index, end=' ')
         try:
             data = get_product_data(asin=asin_number)
-        except:
+        except Exception as e:
+            print(e)
             data = None
         if data is not None:
             keywords = get_keywords(data['title'] + '\n' + data['description'])
