@@ -6,6 +6,7 @@ from keywords import get_keywords
 from tqdm import tqdm
 from random import choice
 import re
+from SessionManager import SessionManager
 from requesting import get
 
 
@@ -36,6 +37,7 @@ def get_product_data(asin: str):
     root = soup.find(id='ppd')
 
     if soup.find(id='buybox') is None:
+        print("No price!")
         return
 
     buybox = soup.find(id='buybox')
@@ -50,6 +52,8 @@ def get_product_data(asin: str):
         product_price = buybox.find(id='corePrice_feature_div').text.strip().split('$')[1]
 
     if product_price is None:
+        print("Product price is NONE")
+        open("test.html", 'w', encoding='utf-8').write(resp)
         return
 
     price = product_price.split('.')
@@ -92,7 +96,12 @@ with open('links_normal.txt') as f:
             print(e)
             data = None
         if data is not None:
-            keywords = get_keywords(data['title'] + '\n' + data['description'])
-            add_product(asin_number, data['price'], data['title'], data['description'], data['ratings_count'],
-                        data['rating'], keywords)
+            try:
+                keywords = get_keywords(data['title'] + '\n' + data['description'])
+                add_product(asin_number, data['price'], data['title'], data['description'], data['ratings_count'],
+                            data['rating'], keywords)
+            except Exception as e:
+                print("Exception in DB", end=': ')
+                print(e)
+                SessionManager().session().rollback()
 

@@ -6,6 +6,8 @@ def add_product(amazon_id: str, cost_cents: int, name: str, description: str, re
                 keywords: list):
     keyword_ids = []
     for keyword in keywords:
+        if len(keyword) > 32:
+            continue
         result = SessionManager().session().query(Keyword).filter_by(word=keyword).all()
         if len(result) == 0:
             new_keyword = Keyword(keyword)
