@@ -63,8 +63,11 @@ def get_product_data(asin: str, price: int):
     # price[1] = re.sub('\D', '', price[1])
 
     product_price = price  # str(int(price[0]) * 100 + int(price[1]))
-
-    product_title = soup.find(id='productTitle').text.strip()
+    product_title = soup.find(id='productTitle')
+    if product_title is not None:
+        product_title = product_title.text.strip()
+    else:
+        product_title = soup.find(id='gc-asin-title').text.strip()
     product_description = soup.find(id='productDescription')
     if product_description is not None:
         product_description = product_description.text.strip()
