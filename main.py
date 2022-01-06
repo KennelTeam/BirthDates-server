@@ -8,6 +8,9 @@ config = dotenv_values(".env")
 from images import Keyword, Product, ProductKeyword
 from SessionManager import SessionManager
 from add_product import add_product
+from keywords import get_keywords
+
+# print(get_keywords("""Example texts include those emanating from such international organizations as the International Chamber of Commerce, the regional accreditation bodies operating under the aegis of the International Organization for Standardization, the World Wide Web Consortium, as well as the work of UNCITRAL itself."""))
 
 
 def test():
