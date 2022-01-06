@@ -1,0 +1,8 @@
+requests~=2.27.0
+bs4~=0.0.1
+beautifulsoup4~=4.10.0
+tqdm~=4.62.3
+python-dotenv~=0.19.2
+pyppdf~=0.1.2
+SQLAlchemy~=1.4.29
+spacy~=3.2.1
