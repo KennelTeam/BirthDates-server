@@ -100,8 +100,11 @@ bans = 0
 description_fails = 0
 
 with open('unique-gifts-ids.txt') as f:
-    for index, line in enumerate(f.readlines()):
-        asin_number, price = line.split(' ')
+    file = f.read()
+    objects = json.loads(file)
+    for index, asin_number in enumerate(objects.keys()):
+        asin_number, price = asin_number, 0
+        categories = objects[asin_number]
         if index % 10 == 0:
             print("Done {}, {} successful, {} failed, {} banned, {} without description".format(
                 index, success_count, index - success_count, bans, description_fails
@@ -117,7 +120,7 @@ with open('unique-gifts-ids.txt') as f:
             try:
                 # if data['description'] == "":
                 #     print("CRIIIIINGE!")
-                keywords = get_keywords(data['title'] + '\n' + data['description'])
+                keywords = get_keywords(data['title'] + '\n' + data['description']) + categories
                 add_product(asin_number, data['price'], data['title'], data['description'], data['ratings_count'],
                             data['rating'], keywords)
                 success_count += 1

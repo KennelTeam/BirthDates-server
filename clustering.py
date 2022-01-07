@@ -18,6 +18,10 @@ nltk.download("stopwords")
 CLUSTERS = 10
 
 
+def clusterize(products):
+    pass
+
+
 def clusterize():
     data = []
     products = []
