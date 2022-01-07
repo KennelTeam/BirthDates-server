@@ -2,7 +2,7 @@ import spacy
 from string import punctuation
 from collections import Counter
 
-nlp = spacy.load('en_core_web_trf')
+nlp = spacy.load('en_core_web_sm')
 
 
 def get_keywords(text):
