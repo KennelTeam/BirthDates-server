@@ -3,6 +3,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from dotenv import dotenv_values
 from images import Base
+from clustering_graph_db import Cluster, ClusterKeyword, ClusterParentToChild, ClusterProductToCluster, ClusterToKeyword
 from singleton import singleton
 
 
