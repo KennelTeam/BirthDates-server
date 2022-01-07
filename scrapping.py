@@ -9,6 +9,8 @@ import re
 from SessionManager import SessionManager
 from requesting import get
 import time
+import asyncio
+from pprint import pprint
 
 
 base_url = 'https://www.amazon.com/dp/'
@@ -16,53 +18,45 @@ base_url = 'https://www.amazon.com/dp/'
 with open('headers.json') as hf:
     headers = json.loads(hf.read())
 
+success_count = 0
+bans = 0
+description_fails = 0
+prev_time = time.time()
+file_with_products = input('Enter .json path: ')
+# file_with_products = '../batches/categs-0.json'
+path_scrapped = 'scrapped-' + file_with_products.split('/')[-1]
 
-def get_product_data(asin: str, price: int, change_proxy=False):
+
+async def get_product_data(asin: str, categories_and_price, change_proxy=False):
+    try:
+        categories = categories_and_price['tags']
+        price = categories['price']
+    except:
+        categories = []
+        price = 0
+    # print('Started', asin)
     url = base_url + asin
-    print(url, end='\n')
     # resp = requests.get(url, headers=headers, proxies={"https": "129.159.133.74:8080", "http": "129.159.133.74:8080"}).text
-    resp = get(url, change_proxy)
+    resp = await get(url, change_proxy)
     if 'To discuss automated access to Amazon data please contact' in resp:
         global bans
         bans += 1
-        print("Got ban! Changing proxy...")
+        # print("Got ban! Changing proxy...")
         # print(resp.text)
-        return get_product_data(asin, price, change_proxy=True)
+        return await get_product_data(asin, price, categories, change_proxy=True)
 
     soup = BeautifulSoup(resp, 'html.parser')
 
-    # root = soup.find(id='ppd')
-
-    # if soup.find(id='buybox') is None:
-    #     print("No price!")
-    #     return
-    #
-    # buybox = soup.find(id='buybox')
-    #
-    # product_price = None
-    # if buybox.find(id='outOfStock') is not None:
-    #     print('out of stock')
-    #     return
-    # elif buybox.find(id='price_inside_buybox') is not None:
-    #     product_price = buybox.find(id='price_inside_buybox').text.strip()
-    # elif buybox.find(id='corePrice_feature_div') is not None:
-    #     product_price = buybox.find(id='corePrice_feature_div').text.strip().split('$')[1]
-    #
-    # if product_price is None:
-    #     print("Product price is NONE")
-    #     open("test.html", 'w', encoding='utf-8').write(resp)
-    #     return
-    #
-    # price = product_price.split('.')
-    # price[0] = re.sub('\D', '', price[0])
-    # price[1] = re.sub('\D', '', price[1])
-
+    product_title = 'AZAZA'
     product_price = price  # str(int(price[0]) * 100 + int(price[1]))
     product_title = soup.find(id='productTitle')
     if product_title is not None:
         product_title = product_title.text.strip()
     else:
-        product_title = soup.find(id='gc-asin-title').text.strip()
+        try:
+            product_title = soup.find(id='gc-asin-title').text.strip()
+        except:
+            print('Failed to get product title of', asin)
     product_description = soup.find(id='productDescription')
     if product_description is not None:
         product_description = product_description.text.strip()
@@ -88,43 +82,46 @@ def get_product_data(asin: str, price: int, change_proxy=False):
         'category': None
     }
 
-    return product
+    global success_count
+    if product is not None:
+        try:
+            keywords = get_keywords(
+                product['title'] + '\n' + product['description']) + categories
+            add_product(asin, product['price'], product['title'], product['description'], product['ratings_count'],
+                        product['rating'], keywords, path_scrapped)
+            success_count += 1
+        except Exception as e:
+            print("Exception in DB", end=': ')
+            print(e)
+
+    print('Saved ' + asin)
 
 
-success_count = 0
-bans = 0
-description_fails = 0
-prev_time = time.time()
-with open('unique-gifts-ids.txt') as f:
+with open(file_with_products) as f:
     file = f.read()
     objects = json.loads(file)
-    for index, asin_number in enumerate(objects.keys()):
-        asin_number, price = asin_number, 0
-        categories = objects[asin_number]
-        if index % 10 == 0:
-            cur_time = time.time()
-            print("Done {}, {} successful, {} failed, {} banned, {} without description, {:.1f} seconds".format(
-                index, success_count, index -
-                success_count, bans, description_fails, cur_time-prev_time
-            ))
-            prev_time = cur_time
-        price = int(price)
-        print(index, end=' ')
-        try:
-            data = get_product_data(asin=asin_number, price=price)
-        except Exception as e:
-            print(e)
-            data = None
-        if data is not None:
-            try:
-                # if data['description'] == "":
-                #     print("CRIIIIINGE!")
-                keywords = get_keywords(
-                    data['title'] + '\n' + data['description']) + categories
-                add_product(asin_number, data['price'], data['title'], data['description'], data['ratings_count'],
-                            data['rating'], keywords)
-                success_count += 1
-            except Exception as e:
-                print("Exception in DB", end=': ')
-                print(e)
-                SessionManager().session().rollback()
+    loop = asyncio.get_event_loop()
+    asins = list(objects.keys())
+
+    items_per_batch = 200
+    batches = []
+    adding = True
+    while adding:
+        if (len(batches)+1)*items_per_batch >= len(asins):
+            batches.append(asins[len(batches)*items_per_batch:])
+            adding = False
+        else:
+            batches.append(
+                asins[len(batches)*items_per_batch:(len(batches)+1)*items_per_batch])
+    # pprint(batches)
+
+    #  categories = objects[asin_number]
+    ptime = time.time()
+    for batch in tqdm(batches):
+        gathered = asyncio.gather(*[get_product_data(asin, objects[asin])
+                                    for asin in batch])
+        results = loop.run_until_complete(gathered)
+
+        ctime = time.time()
+        print('Took', ctime - ptime)
+        ptime = ctime
