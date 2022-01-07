@@ -66,6 +66,41 @@ def generalize_item(keywords: dict):
     return synsets_dict
 
 
+def generalize_item_pairs(keywords: dict):
+    keywords_sorted = sorted([(keywords[word], word) for word in keywords if len(wn.synsets(word)) > 0], reverse=True)
+    # print(keywords_sorted)
+    k_main = min(20, len(keywords_sorted))
+    keywords_sorted = keywords_sorted[:k_main]
+    new_synsets = dict()
+    for idx, (k1, word1) in enumerate(keywords_sorted):
+        synset1 = wn.synsets(word1)[0]
+        if synset1 in new_synsets:
+            new_synsets[synset1] += k1
+        else:
+            new_synsets[synset1] = k1
+        for k2, word2 in keywords_sorted[idx + 1:]:
+            synset2 = wn.synsets(word2)[0]
+            variants = synset1.lowest_common_hypernyms(synset2)
+            if len(variants) == 0:
+                continue
+            hyper = variants[0]
+            # print(">>", word1, word2, synset1, synset2, hyper)
+            k_new = (k1 + k2) * synset1.path_similarity(hyper) * synset2.path_similarity(hyper) * 8
+            if hyper in new_synsets:
+                new_synsets[hyper] += k_new
+            else:
+                new_synsets[hyper] = k_new
+    synsets_sorted = sorted([(new_synsets[syn], syn) for syn in new_synsets], reverse=True)
+    k_synsets = min(15, len(synsets_sorted))
+    # print(synsets_sorted[:k_synsets])
+    synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted[:k_synsets]}
+    return synsets_dict
+
+
+# d = {"phone": 0.3, "computer": 0.3, "pc": 0.26, "headphones": 0.25, "wireless": 0.05, "tech": 0.23, "sound": 0.18, "speaker": 0.2}
+#
+# print(generalize_item_pairs(d))
+
 def prepare_dataset(items, parameters_count=200):
     texts = []
     all_words = set()
@@ -116,7 +151,7 @@ def clustering_step(items, clusters_count):
                     if word not in cur_keywords.keys():
                         cur_keywords[word] = 0
                     cur_keywords[word] += items[item_index][word]
-        new_items.append(generalize_item(cur_keywords))
+        new_items.append(generalize_item_pairs(cur_keywords))
 
     return new_items, labels
 
@@ -127,6 +162,7 @@ CLUSTER_DENSITY = 4
 def save_cluster(keywords, parent_id: int = 0):
     cluster = Cluster()
     SessionManager().session().add(cluster)
+    SessionManager().session().commit()
     SessionManager().session().refresh(cluster)
 
     keyword_ids = []
@@ -135,6 +171,7 @@ def save_cluster(keywords, parent_id: int = 0):
         if len(kw) == 0:
             new_keyword = ClusterKeyword(keyword)
             SessionManager().session().add(new_keyword)
+            SessionManager().session().commit()
             SessionManager().session().refresh(new_keyword)
             keyword_ids.append((new_keyword.id, keywords[keyword]))
         else:
@@ -159,25 +196,32 @@ def add_product_to_cluster(cluster_id: int, product_id: int):
 
 def make_clustering(steps: int):
     initial_data = prepare_data()
+    print("data prepared")
     cluster_words = [initial_data]
     cluster_children = [[]]
     for i in range(steps):
+        print("{} steps done".format(i))
         new_data, new_labels = clustering_step(cluster_words[-1], CLUSTER_DENSITY**(steps - i))
         cluster_words.append(new_data)
         cluster_children.append(new_labels)
 
+    print("saving base clusters")
     prev_ids = []
     for cluster in cluster_words[-1]:
         id = save_cluster(cluster)
         prev_ids.append(id)
 
+    print("base clusters saved")
     for i in range(steps - 1):
+        print("saving clusters. step {} of {}".format(i + 1, steps - 1))
         nprev_ids = []
         for index, parent in enumerate(cluster_children[steps - i]):
             parent_id = prev_ids[parent]
             id = save_cluster(cluster_words[steps - i - 1][index], parent_id)
             nprev_ids.append(id)
         prev_ids = nprev_ids
+
+    print("saving products relations")
     for id, parent in enumerate(cluster_children[1]):
         parent_id = prev_ids[parent]
-        add_product_to_cluster(parent_id, id)
+        add_product_to_cluster(parent_id, id + 1)
