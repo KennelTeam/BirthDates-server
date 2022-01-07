@@ -10,6 +10,8 @@ from string import punctuation
 from nltk.stem import PorterStemmer
 import db_functions
 from sklearn.feature_extraction.text import TfidfVectorizer
+from SessionManager import SessionManager
+from clustering_graph_db import Cluster, ClusterKeyword, ClusterToKeyword, ClusterParentToChild, ClusterProductToCluster
 
 porter = PorterStemmer()
 KEYWORD_WEIGHT = 6
@@ -17,8 +19,9 @@ nltk.download('wordnet')
 
 
 def prepare_data():
-    keywords = []
-    for product in SessionManager().session().query(Product).all():
+    total = SessionManager().session().query(Product).all()
+    keywords = [None] * len(total)
+    for id, product in enumerate(total):
         text = product.name + "\n" + product.description
         words = word_tokenize(text)
         cur_keywords = {}
@@ -33,7 +36,7 @@ def prepare_data():
             if word not in cur_keywords.keys():
                 cur_keywords[word] = 0
             cur_keywords[word] += KEYWORD_WEIGHT
-        keywords.append(cur_keywords)
+        keywords[product.id - 1] = cur_keywords
     return keywords
 
 
@@ -76,8 +79,11 @@ def generalize_item_pairs(keywords: dict):
             new_synsets[synset1] = k1
         for k2, word2 in keywords_sorted[idx + 1:]:
             synset2 = wn.synsets(word2)[0]
-            hyper = synset1.lowest_common_hypernyms(synset2)[0]
-            print(">>", word1, word2, synset1, synset2, hyper)
+            variants = synset1.lowest_common_hypernyms(synset2)
+            if len(variants) == 0:
+                continue
+            hyper = variants[0]
+            # print(">>", word1, word2, synset1, synset2, hyper)
             k_new = (k1 + k2) * synset1.path_similarity(hyper) * synset2.path_similarity(hyper) * 8
             if hyper in new_synsets:
                 new_synsets[hyper] += k_new
@@ -171,7 +177,77 @@ def clustering_step(items, clusters_count):
                     if word not in cur_keywords.keys():
                         cur_keywords[word] = 0
                     cur_keywords[word] += items[item_index][word]
-        new_items.append(generalize_item(cur_keywords))
+        new_items.append(generalize_item_pairs(cur_keywords))
 
     return new_items, labels
 
+
+CLUSTER_DENSITY = 4
+
+
+def save_cluster(keywords, parent_id: int = 0):
+    cluster = Cluster()
+    SessionManager().session().add(cluster)
+    SessionManager().session().commit()
+    SessionManager().session().refresh(cluster)
+
+    keyword_ids = []
+    for keyword in keywords.keys():
+        kw = SessionManager().session().query(ClusterKeyword).filter_by(word=keyword).all()
+        if len(kw) == 0:
+            new_keyword = ClusterKeyword(keyword)
+            SessionManager().session().add(new_keyword)
+            SessionManager().session().commit()
+            SessionManager().session().refresh(new_keyword)
+            keyword_ids.append((new_keyword.id, keywords[keyword]))
+        else:
+            keyword_ids.append((kw[0].id, keywords[keyword]))
+
+    for id, weight in keyword_ids:
+        new_pair = ClusterToKeyword(id, cluster.id, weight)
+        SessionManager().session().add(new_pair)
+
+    if parent_id != 0:
+        parentToChild = ClusterParentToChild(parent_id, cluster.id)
+        SessionManager().session().add(parentToChild)
+
+    SessionManager().session().commit()
+    return cluster.id
+
+
+def add_product_to_cluster(cluster_id: int, product_id: int):
+    SessionManager().session().add(ClusterProductToCluster(cluster_id, product_id))
+    SessionManager().session().commit()
+
+
+def make_clustering(steps: int):
+    initial_data = prepare_data()
+    print("data prepared")
+    cluster_words = [initial_data]
+    cluster_children = [[]]
+    for i in range(steps):
+        print("{} steps done".format(i))
+        new_data, new_labels = clustering_step(cluster_words[-1], CLUSTER_DENSITY**(steps - i))
+        cluster_words.append(new_data)
+        cluster_children.append(new_labels)
+
+    print("saving base clusters")
+    prev_ids = []
+    for cluster in cluster_words[-1]:
+        id = save_cluster(cluster)
+        prev_ids.append(id)
+
+    print("base clusters saved")
+    for i in range(steps - 1):
+        print("saving clusters. step {} of {}".format(i + 1, steps - 1))
+        nprev_ids = []
+        for index, parent in enumerate(cluster_children[steps - i]):
+            parent_id = prev_ids[parent]
+            id = save_cluster(cluster_words[steps - i - 1][index], parent_id)
+            nprev_ids.append(id)
+        prev_ids = nprev_ids
+
+    print("saving products relations")
+    for id, parent in enumerate(cluster_children[1]):
+        parent_id = prev_ids[parent]
+        add_product_to_cluster(parent_id, id + 1)
