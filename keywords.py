@@ -5,6 +5,7 @@ from spacy.lang.en.stop_words import STOP_WORDS
 
 nlp = spacy.load('en_core_web_sm')
 
+
 class TextRank4Keyword():
     """Extract keywords from text"""
 
@@ -133,14 +134,3 @@ def get_keywords(text):
     tr4w.analyze(text, candidate_pos=['NOUN', 'PROPN'], window_size=4, lower=True)
     return tr4w.get_keywords(10)
 
-
-# text = "RoverTac Camping Accessories Multitool Hatchet Survival Gear Christmas Gifts for Men Dad Husband 14 in 1 Multi Tool Axe Hammer Knife Saw Screwdrivers Pliers Bottle Opener Durable Sheath" + \
-#                    """100% Satisfaction Guarantee: WE STAND BEHIND OUR PRODUCTS AND WARRANTY. Your satisfaction is our top priority. We offer lifetime warranty against defects in material and workmanship and no reason return policy to guarantee you the BEST purchase experience.
-# Compact Toolkit: Contains 14 different tools including Hammer, Axe, Pliers, Knife Blade, Saw, Assorted Hex Wrenches, Phillips screwdriver, Bottle Opener, File, Fish Descaler and more with a Safety Lock.
-# Heavy Duty: Full stainless steel with durable black oxidation for the main part, special red color oxidation for the handle. Strong enough to cut, pry, twist the screw, open fire hydrant, saw wood etc.
-# Easy to Carry: This camping accessories multitool hatchet applies an UPGRADED durable sheath that FULLY covers the blade, holding the item tight in position, guarantee a safe & lightweight carrying and convenient to takeout for use.
-# A Perfect Christmas Gift: This is a Year round useful tool for Campers, Hikers, DIYer's for Father, Son, Boyfriend, Men or Women for Birthdays, Christmas, and Father’s Day. It makes a special gift for teenage boys as well. Will be used year round, not tossed aside like most gifts."""
-#
-# time0 = time.time()
-# print(get_keywords(text))
-# print(time.time() - time0)
