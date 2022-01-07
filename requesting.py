@@ -49,7 +49,8 @@ asession = AsyncHTMLSession()
 with open('proxies_weights-t.json') as f:
     inp_w_prox = json.loads(f.read())
 
-(proxies, proxy_weights) = zip(*inp_w_prox.items())
+[proxies, proxy_weights] = zip(*inp_w_prox.items())
+proxy_weights = list(proxy_weights)
 
 
 proxy_ind = 0

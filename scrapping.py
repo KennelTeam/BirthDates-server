@@ -30,7 +30,8 @@ path_scrapped = 'scrapped-' + file_with_products.split('/')[-1]
 async def get_product_data(asin: str, categories_and_price, change_proxy=False):
     try:
         categories = categories_and_price['tags']
-        price = categories['price']
+        categories = prepare_categories(categories)
+        price = categories_and_price['price']
     except:
         categories = []
         price = 0
@@ -43,7 +44,7 @@ async def get_product_data(asin: str, categories_and_price, change_proxy=False):
         bans += 1
         # print("Got ban! Changing proxy...")
         # print(resp.text)
-        return await get_product_data(asin, price, categories, change_proxy=True)
+        return await get_product_data(asin, categories_and_price, change_proxy=True)
 
     soup = BeautifulSoup(resp, 'html.parser')
 
@@ -61,10 +62,14 @@ async def get_product_data(asin: str, categories_and_price, change_proxy=False):
     if product_description is not None:
         product_description = product_description.text.strip()
     else:
-        product_description = ""
-        global description_fails
-        description_fails += 1
-        # print("trouble!")
+        product_description = soup.find(id="feature-bullets")
+        if product_description is not None:
+            product_description = product_description.text.strip()
+        else:
+            product_description = ""
+            global description_fails
+            description_fails += 1
+            # print("trouble!")
     product_ratings_count = soup.find(id='acrCustomerReviewText')
     if product_ratings_count is not None:
         product_ratings_count = product_ratings_count.text.strip().split()[
@@ -86,7 +91,7 @@ async def get_product_data(asin: str, categories_and_price, change_proxy=False):
     if product is not None:
         try:
             keywords = get_keywords(
-                product['title'] + '\n' + product['description']) + categories
+                product['title'] + '\n' + product['description'])
             add_product(asin, product['price'], product['title'], product['description'], product['ratings_count'],
                         product['rating'], keywords, path_scrapped)
             success_count += 1
@@ -95,6 +100,16 @@ async def get_product_data(asin: str, categories_and_price, change_proxy=False):
             print(e)
 
     print('Saved ' + asin)
+
+
+def prepare_categories(categories):
+    new_categories = []
+    for cat in categories:
+        if '&' in cat:
+            new_categories += cat.split(' & ')
+        else:
+            new_categories.append(cat)
+    return new_categories
 
 
 with open(file_with_products) as f:
@@ -125,3 +140,5 @@ with open(file_with_products) as f:
         ctime = time.time()
         print('Took', ctime - ptime)
         ptime = ctime
+
+print('Successfilly finished!')

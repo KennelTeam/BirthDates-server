@@ -24,6 +24,7 @@ def add_product(amazon_id: str, cost_cents: int, name: str, description: str, re
         if len(result) == 0:
             id_keyword += 1
             keywords.append([id_keyword, keyword])
+            keyword_ids.append(id_keyword)
         else:
             keyword_ids.append(result[0][0])
 
