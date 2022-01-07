@@ -127,4 +127,4 @@ with open('unique-gifts-ids.txt') as f:
             except Exception as e:
                 print("Exception in DB", end=': ')
                 print(e)
-                SessionManager().session().rollback()
+                # SessionManager().session().rollback()

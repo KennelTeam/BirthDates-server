@@ -1,6 +1,7 @@
 import spacy
 from string import punctuation
 from collections import Counter
+import re
 
 nlp = spacy.load('en_core_web_sm')
 
@@ -8,11 +9,9 @@ nlp = spacy.load('en_core_web_sm')
 def get_keywords(text):
     text = text.lower()
     result = []
-    pos_tag = ['PROPN', 'ADJ', 'NOUN']
+    # pos_tag = ['PROPN', 'ADJ', 'NOUN']
     doc = nlp(text)
     for token in doc.ents:
-        # if token in nlp.Defaults.stop_words or token in punctuation:
-        #     continue
-        if len(token.text) < 64:
+        if len(token.text) < 32 and bool(re.match(r"([a-zA-Z][ ]*)+$", token.text)):
             result.append(token.text)
     return list(set(result))
