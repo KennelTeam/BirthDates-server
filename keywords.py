@@ -15,4 +15,4 @@ def get_keywords(text):
         #     continue
         if len(token.text) < 64:
             result.append(token.text)
-    return result
+    return list(set(result))
