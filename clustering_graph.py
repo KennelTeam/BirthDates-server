@@ -20,7 +20,7 @@ nltk.download('wordnet')
 
 def prepare_data():
     total = SessionManager().session().query(Product).all()
-    keywords = [None] * len(total)
+    keywords = {}
     for id, product in enumerate(total):
         text = product.name + "\n" + product.description
         words = word_tokenize(text)
@@ -36,7 +36,7 @@ def prepare_data():
             if word not in cur_keywords.keys():
                 cur_keywords[word] = 0
             cur_keywords[word] += KEYWORD_WEIGHT
-        keywords[product.id - 1] = cur_keywords
+        keywords[product.id] = cur_keywords
     return keywords
 
 
@@ -130,7 +130,10 @@ def generalize_item_v3(keywords: dict):
 def prepare_dataset(items, parameters_count=200):
     texts = []
     all_words = set()
-    for item in items:
+    ids_order = []
+    for id in items.keys():
+        item = items[id]
+        ids_order.append(id)
         sm = 0
         for word in item.keys():
             sm += item[word]
@@ -148,7 +151,7 @@ def prepare_dataset(items, parameters_count=200):
             if vectorizer.vocabulary_[word] < parameters_count:
                 keywords[vectorizer.vocabulary_[word]] = word
     vectors = StandardScaler().fit_transform(vectors.toarray())
-    return vectors, keywords
+    return vectors, keywords, ids_order
 
 
 def clusterize(X, clusters_count):
@@ -157,15 +160,16 @@ def clusterize(X, clusters_count):
 
 
 def clustering_step(items, clusters_count):
-    prep_items = []
-    for item in items:
+    prep_items = {}
+    for id in items.keys():
+        item = items[id]
         count = 0
         for word in item.keys():
             count += item[word]
-        prep_items.append({word: item[word] / count for word in item.keys()})
+        prep_items[id] = ({word: item[word] / count for word in item.keys()})
     items = prep_items
 
-    X, keywords = prepare_dataset(items)
+    X, keywords, ids_order = prepare_dataset(items)
     centers, labels = clusterize(X, clusters_count)
     new_items = []
 
@@ -179,7 +183,7 @@ def clustering_step(items, clusters_count):
                     cur_keywords[word] += items[item_index][word]
         new_items.append(generalize_item_pairs(cur_keywords))
 
-    return new_items, labels
+    return new_items, labels, ids_order
 
 
 CLUSTER_DENSITY = 4
@@ -221,11 +225,11 @@ def add_product_to_cluster(cluster_id: int, product_id: int):
 
 
 def clear_db():
-    SessionManager().session().delete(SessionManager().session().query(ClusterToKeyword).all())
-    SessionManager().session().delete(SessionManager().session().query(ClusterParentToChild).all())
-    SessionManager().session().delete(SessionManager().session().query(ClusterProductToCluster).all())
-    SessionManager().session().delete(SessionManager().session().query(ClusterKeyword).all())
-    SessionManager().session().delete(SessionManager().session().query(Cluster).all())
+    SessionManager().session().query(ClusterToKeyword).delete()
+    SessionManager().session().query(ClusterParentToChild).delete()
+    SessionManager().session().query(ClusterProductToCluster).delete()
+    SessionManager().session().query(ClusterKeyword).delete()
+    SessionManager().session().query(Cluster).delete()
     SessionManager().session().commit()
 
 
@@ -235,9 +239,12 @@ def make_clustering(steps: int):
     print("data prepared")
     cluster_words = [initial_data]
     cluster_children = [[]]
+    product_ids = []
     for i in range(steps):
         print("{} steps done".format(i))
-        new_data, new_labels = clustering_step(cluster_words[-1], CLUSTER_DENSITY**(steps - i))
+        new_data, new_labels, ids_order = clustering_step(cluster_words[-1], CLUSTER_DENSITY**(steps - i))
+        if i == 0:
+            product_ids = ids_order
         cluster_words.append(new_data)
         cluster_children.append(new_labels)
 
@@ -260,4 +267,4 @@ def make_clustering(steps: int):
     print("saving products relations")
     for id, parent in enumerate(cluster_children[1]):
         parent_id = prev_ids[parent]
-        add_product_to_cluster(parent_id, id + 1)
+        add_product_to_cluster(parent_id, product_ids[id])
