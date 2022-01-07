@@ -34,7 +34,7 @@ def user_choose(clusters_list):
     words = words_to_ask(clusters_list)
     print("Choose words, that describes your friend better then others (write numbers dividing with space):")
     for idx, w in enumerate(words):
-        print(str(idx + 1) + ') ' + w, end=' ')
+        print(str(idx + 1) + ') ' + w, end='\n')
     print()
     ans = [words[int(i) - 1] for i in input().split()]
     return choose_cluster(ans, clusters_list)

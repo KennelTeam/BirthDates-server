@@ -4,9 +4,8 @@ from sqlalchemy.sql import exists
 
 
 def get_root_clusters():
-    roots = SessionManager().session().query(Cluster).filter(Cluster.id.not_in(
-        SessionManager().session().query(exists().where(ClusterParentToChild.child_id == Cluster.id))
-    )).all()
+    roots = SessionManager().session().query(Cluster).filter(~exists().where(ClusterParentToChild.child_id == Cluster.id)
+    ).all()
     return [(cluster.id, get_cluster_keywords(cluster.id)) for cluster in roots]
 
 

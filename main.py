@@ -1,19 +1,25 @@
-import requests
-from bs4 import BeautifulSoup
-from tqdm import tqdm
-import json
-import os
-from dotenv import dotenv_values
-config = dotenv_values(".env")
-from images import Keyword, Product, ProductKeyword
-from SessionManager import SessionManager
-from add_product import add_product
-from keywords import get_keywords
+from user_questions import user_choose
+from clustering_graph_db_functions import *
+from db_functions import get_product
 
-# print(get_keywords("""Example texts include those emanating from such international organizations as the International Chamber of Commerce, the regional accreditation bodies operating under the aegis of the International Organization for Standardization, the World Wide Web Consortium, as well as the work of UNCITRAL itself."""))
+initial = get_root_clusters()
+prev = 0
+current = initial
+print([a[0] for a in current])
 
+while len(current) > 0:
+    index = user_choose([x[1] for x in current])
+    id = current[index][0]
+    prev = id
+    print(id)
+    current = get_child_clusters(id)
+    print([a[0] for a in current])
 
-def test():
-    add_product("PSINA", 179, "Test psina item", "This is the best test psina item to buy", 123, 1.81,
-                ["test", "psina", "item"])
+print(get_cluster_keywords(prev))
 
+products = get_cluster_products(prev)
+
+print(products)
+
+for product in products:
+    print(get_product(product))
