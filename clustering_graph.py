@@ -1,7 +1,6 @@
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import nltk
-import random
 from nltk.corpus import wordnet as wn
 from SessionManager import SessionManager
 from images import Product
@@ -91,9 +90,36 @@ def generalize_item_pairs(keywords: dict):
     return synsets_dict
 
 
+def generalize_item_v3(keywords: dict):
+    keywords_sorted = sorted([(keywords[word], word) for word in keywords if len(wn.synsets(word)) > 0], reverse=True)
+    # print(keywords_sorted)
+    k_main = min(20, len(keywords_sorted))
+    keywords_sorted = keywords_sorted[:k_main]
+    new_synsets = dict()
+    for idx, (k1, word1) in enumerate(keywords_sorted):
+        synset1 = wn.synsets(word1)[0]
+        new_synsets[synset1] = 0
+        for k2, word2 in keywords_sorted[idx + 1:]:
+            synset2 = wn.synsets(word2)[0]
+            hyper = synset1.lowest_common_hypernyms(synset2)
+            if len(hyper) > 0:
+                new_synsets[hyper[0]] = 0
+
+    for k, word in keywords_sorted:
+        synset_w = wn.synsets(word)[0]
+        for synset in new_synsets:
+            new_synsets[synset] += k * synset_w.path_similarity(synset)
+
+    synsets_sorted = sorted([(new_synsets[syn], syn) for syn in new_synsets], reverse=True)
+    k_synsets = min(15, len(synsets_sorted))
+    # print(synsets_sorted[:k_synsets])
+    synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted[:k_synsets]}
+    return synsets_dict
+
+
 # d = {"phone": 0.3, "computer": 0.3, "pc": 0.26, "headphones": 0.25, "wireless": 0.05, "tech": 0.23, "sound": 0.18, "speaker": 0.2}
 #
-# print(generalize_item_pairs(d))
+# print(generalize_item_v3(d))
 
 def prepare_dataset(items, parameters_count=200):
     texts = []
