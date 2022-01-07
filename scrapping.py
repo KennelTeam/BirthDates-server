@@ -8,13 +8,8 @@ from random import choice
 import re
 from SessionManager import SessionManager
 from requesting import get
+import time
 
-
-proxies_html = requests.get('https://free-proxy-list.net/', headers={'User-Agent':'Mozilla/5.0'})
-proxies_soup = BeautifulSoup(proxies_html.text,"lxml")
-# print(res.text)
-for item in proxies_soup.find_all("textarea"):
-  proxies = item.text.split('\n')[3:]
 
 base_url = 'https://www.amazon.com/dp/'
 
@@ -22,17 +17,17 @@ with open('headers.json') as hf:
     headers = json.loads(hf.read())
 
 
-def get_product_data(asin: str, price: int):
+def get_product_data(asin: str, price: int, change_proxy=False):
     url = base_url + asin
     print(url, end='\n')
     # resp = requests.get(url, headers=headers, proxies={"https": "129.159.133.74:8080", "http": "129.159.133.74:8080"}).text
-    resp = get(url)
+    resp = get(url, change_proxy)
     if 'To discuss automated access to Amazon data please contact' in resp:
         global bans
         bans += 1
-        print("BAN!")
+        print("Got ban! Changing proxy...")
         # print(resp.text)
-        return None
+        return get_product_data(asin, price, change_proxy=True)
 
     soup = BeautifulSoup(resp, 'html.parser')
 
@@ -78,7 +73,8 @@ def get_product_data(asin: str, price: int):
         # print("trouble!")
     product_ratings_count = soup.find(id='acrCustomerReviewText')
     if product_ratings_count is not None:
-        product_ratings_count = product_ratings_count.text.strip().split()[0].replace(',', '.')
+        product_ratings_count = product_ratings_count.text.strip().split()[
+            0].replace(',', '.')
     product_rating = soup.find('span', class_='a-icon-alt')
     if product_rating is not None:
         product_rating = product_rating.text.strip().split()[0]
@@ -98,7 +94,7 @@ def get_product_data(asin: str, price: int):
 success_count = 0
 bans = 0
 description_fails = 0
-
+prev_time = time.time()
 with open('unique-gifts-ids.txt') as f:
     file = f.read()
     objects = json.loads(file)
@@ -106,9 +102,12 @@ with open('unique-gifts-ids.txt') as f:
         asin_number, price = asin_number, 0
         categories = objects[asin_number]
         if index % 10 == 0:
-            print("Done {}, {} successful, {} failed, {} banned, {} without description".format(
-                index, success_count, index - success_count, bans, description_fails
+            cur_time = time.time()
+            print("Done {}, {} successful, {} failed, {} banned, {} without description, {:.1f} seconds".format(
+                index, success_count, index -
+                success_count, bans, description_fails, cur_time-prev_time
             ))
+            prev_time = cur_time
         price = int(price)
         print(index, end=' ')
         try:
@@ -120,7 +119,8 @@ with open('unique-gifts-ids.txt') as f:
             try:
                 # if data['description'] == "":
                 #     print("CRIIIIINGE!")
-                keywords = get_keywords(data['title'] + '\n' + data['description']) + categories
+                keywords = get_keywords(
+                    data['title'] + '\n' + data['description']) + categories
                 add_product(asin_number, data['price'], data['title'], data['description'], data['ratings_count'],
                             data['rating'], keywords)
                 success_count += 1
@@ -128,4 +128,3 @@ with open('unique-gifts-ids.txt') as f:
                 print("Exception in DB", end=': ')
                 print(e)
                 SessionManager().session().rollback()
-

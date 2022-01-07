@@ -14,7 +14,7 @@ class SessionManager:
 
     def __init__(self):
         data = dotenv_values(".env")
-        self.__engine = create_engine("{engine}://{username}:{password}@{db_address}/{db_name}?charset=utf8mb4"\
+        self.__engine = create_engine("{engine}://{username}:{password}@{db_address}/{db_name}?charset=utf8mb4"
                                       .format(engine=data['DATABASE_ENGINE'], username=data['DATABASE_USERNAME'],
                                               password=data['DATABASE_PASSWORD'], db_address=data['DATABASE_URL'],
                                               db_name=data['DATABASE_NAME']))
