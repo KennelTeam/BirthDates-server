@@ -220,7 +220,17 @@ def add_product_to_cluster(cluster_id: int, product_id: int):
     SessionManager().session().commit()
 
 
+def clear_db():
+    SessionManager().session().delete(SessionManager().session().query(ClusterToKeyword).all())
+    SessionManager().session().delete(SessionManager().session().query(ClusterParentToChild).all())
+    SessionManager().session().delete(SessionManager().session().query(ClusterProductToCluster).all())
+    SessionManager().session().delete(SessionManager().session().query(ClusterKeyword).all())
+    SessionManager().session().delete(SessionManager().session().query(Cluster).all())
+    SessionManager().session().commit()
+
+
 def make_clustering(steps: int):
+    clear_db()
     initial_data = prepare_data()
     print("data prepared")
     cluster_words = [initial_data]

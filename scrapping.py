@@ -67,10 +67,14 @@ def get_product_data(asin: str, price: int, change_proxy=False):
     if product_description is not None:
         product_description = product_description.text.strip()
     else:
-        product_description = ""
-        global description_fails
-        description_fails += 1
-        # print("trouble!")
+        product_description = soup.find(id="feature-bullets")
+        if product_description is not None:
+            product_description = product_description.text.strip()
+        else:
+            product_description = ""
+            global description_fails
+            description_fails += 1
+            # print("trouble!")
     product_ratings_count = soup.find(id='acrCustomerReviewText')
     if product_ratings_count is not None:
         product_ratings_count = product_ratings_count.text.strip().split()[
@@ -91,6 +95,16 @@ def get_product_data(asin: str, price: int, change_proxy=False):
     return product
 
 
+def prepare_categories(categories):
+    new_categories = []
+    for cat in categories:
+        if '&' in cat:
+            new_categories += cat.split(' & ')
+        else:
+            new_categories.append(cat)
+    return new_categories
+
+
 success_count = 0
 bans = 0
 description_fails = 0
@@ -100,7 +114,7 @@ with open('unique-gifts-ids.txt') as f:
     objects = json.loads(file)
     for index, asin_number in enumerate(objects.keys()):
         asin_number, price = asin_number, 0
-        categories = objects[asin_number]
+        categories = prepare_categories(objects[asin_number])
         if index % 10 == 0:
             cur_time = time.time()
             print("Done {}, {} successful, {} failed, {} banned, {} without description, {:.1f} seconds".format(
