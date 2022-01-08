@@ -60,7 +60,11 @@ def generalize_item(keywords: dict):
     synsets_sorted = sorted([(new_synsets[syn], syn) for syn in new_synsets], reverse=True)
     k_synsets = min(15, len(synsets_sorted))
     # print(synsets_sorted[:k_synsets])
-    synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted[:k_synsets]}
+    synsets_sorted = synsets_sorted[:k_synsets]
+    max_k = synsets_sorted[0]
+    for i in range(len(synsets_sorted)):
+        synsets_sorted /= max_k
+    synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted}
     return synsets_dict
 
 
@@ -83,7 +87,13 @@ def generalize_item_pairs(keywords: dict):
                 continue
             hyper = variants[0]
             # print(">>", word1, word2, synset1, synset2, hyper)
-            k_new = (k1 + k2) * synset1.path_similarity(hyper) * synset2.path_similarity(hyper) * 8
+            sim1 = synset1.path_similarity(hyper)
+            if sim1 is None:
+                sim1 = 0
+            sim2 = synset2.path_similarity(hyper)
+            if sim2 is None:
+                sim2 = 0
+            k_new = (k1 + k2) * sim1 * sim2 * 8
             if hyper in new_synsets:
                 new_synsets[hyper] += k_new
             else:
@@ -91,7 +101,11 @@ def generalize_item_pairs(keywords: dict):
     synsets_sorted = sorted([(new_synsets[syn], syn) for syn in new_synsets], reverse=True)
     k_synsets = min(15, len(synsets_sorted))
     # print(synsets_sorted[:k_synsets])
-    synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted[:k_synsets]}
+    synsets_sorted = synsets_sorted[:k_synsets]
+    max_k = synsets_sorted[0]
+    for i in range(len(synsets_sorted)):
+        synsets_sorted /= max_k
+    synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted}
     return synsets_dict
 
 
@@ -113,12 +127,22 @@ def generalize_item_v3(keywords: dict):
     for k, word in keywords_sorted:
         synset_w = wn.synsets(word)[0]
         for synset in new_synsets:
-            new_synsets[synset] += k * synset_w.path_similarity(synset)
+            sim = synset_w.path_similarity(synset)
+            if sim is None:
+                sim = 0
+            new_synsets[synset] += k * sim
+
+    for synset in new_synsets:
+        new_synsets[synset] /= k_main
 
     synsets_sorted = sorted([(new_synsets[syn], syn) for syn in new_synsets], reverse=True)
     k_synsets = min(15, len(synsets_sorted))
     # print(synsets_sorted[:k_synsets])
-    synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted[:k_synsets]}
+    synsets_sorted = synsets_sorted[:k_synsets]
+    max_k = synsets_sorted[0]
+    for i in range(len(synsets_sorted)):
+        synsets_sorted /= max_k
+    synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted}
     return synsets_dict
 
 

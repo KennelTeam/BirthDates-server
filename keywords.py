@@ -2,6 +2,10 @@ from collections import OrderedDict
 import numpy as np
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
+import nltk
+from nltk.corpus import wordnet as wn
+
+nltk.download('wordnet')
 
 nlp = spacy.load('en_core_web_sm')
 
@@ -90,8 +94,12 @@ class TextRank4Keyword():
         node_weight = OrderedDict(sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
         counter = 1
         word_koe = dict()
+        max_k = list(node_weight.items())[0][1]
         for word, k in node_weight.items():
-            word_koe[word] = k
+            if len(wn.synsets(word)) == 0:
+                print(word)
+                continue
+            word_koe[word] = k / max_k
             if counter == number:
                 break
             counter += 1
@@ -148,7 +156,7 @@ def get_keywords(text):
 
 def get_keywords_koe(text):
     tr4w = TextRank4Keyword()
-    tr4w.analyze(text, candidate_pos=['NOUN', 'PROPN'], window_size=4, lower=True)
+    tr4w.analyze(text, candidate_pos=['NOUN', 'VERB'], window_size=4, lower=True)
     return tr4w.get_keywords_koe(10)
 
 
