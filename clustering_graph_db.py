@@ -7,25 +7,17 @@ class Cluster(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    def __init__(self):
+    def __init__(self, id: int = 0):
         super().__init__()
-
-
-class ClusterKeyword(Base):
-    __tablename__ = "cluster_keyword"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    word = Column(VARCHAR(64), unique=True)
-
-    def __init__(self, word: str):
-        self.word = word
+        if id != 0:
+            self.id = id
 
 
 class ClusterToKeyword(Base):
     __tablename__ = "cluster_to_keyword"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    keyword_id = Column(Integer, ForeignKey("cluster_keyword.id"))
+    keyword_id = Column(Integer, ForeignKey("keyword.id"))
     cluster_id = Column(Integer, ForeignKey("cluster.id"))
     weight = Column(Float)
 

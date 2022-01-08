@@ -10,8 +10,10 @@ class Keyword(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     word = Column(VARCHAR(32), unique=True)
 
-    def __init__(self, word: str):
+    def __init__(self, word: str, id: int = 0):
         self.word = word
+        if id != 0:
+            self.id = id
 
     def to_json(self):
         return {
@@ -32,7 +34,7 @@ class Product(Base):
     avg_rating = Column(Float)
 
     def __init__(self, amazon_id: str, cost_cents: int, name: str, description: str, reviews_count: int,
-                 avg_rating: float):
+                 avg_rating: float, id: int = 0):
         super().__init__()
         self.amazon_id = amazon_id
         self.cost = cost_cents
@@ -40,6 +42,8 @@ class Product(Base):
         self.description = description
         self.reviews_count = reviews_count
         self.avg_rating = avg_rating
+        if id != 0:
+            self.id = id
 
     def to_json(self):
         return {
@@ -59,8 +63,10 @@ class ProductKeyword(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     product_id = Column(Integer, ForeignKey('product.id'))
     keyword_id = Column(Integer, ForeignKey('keyword.id'))
+    weight = Column(Float)
 
-    def __init__(self, product_id, keyword_id):
+    def __init__(self, product_id, keyword_id, weight):
         self.product_id = product_id
         self.keyword_id = keyword_id
+        self.weight = weight
 

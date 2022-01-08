@@ -3,7 +3,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from dotenv import dotenv_values
 from images import Base
-from clustering_graph_db import Cluster, ClusterKeyword, ClusterParentToChild, ClusterProductToCluster, ClusterToKeyword
+from clustering_graph_db import Cluster, ClusterParentToChild, ClusterProductToCluster, ClusterToKeyword
+from questions_db import Question, QuestionToKeyword
+from users_db import User, Favourite
 from singleton import singleton
 
 
@@ -21,12 +23,12 @@ class SessionManager:
                                               db_name=data['DATABASE_NAME']))
 
         Base.metadata.create_all(self.__engine)
-        self.__connection = self.__engine.connect()
+        # self.__connection = self.__engine.connect()
         self.__session = Session(self.__engine)
 
     def __del__(self):
         self.__session.close()
-        self.__connection.close()
+        # self.__connection.close()
 
     def session(self):
         return self.__session
