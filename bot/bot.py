@@ -29,11 +29,11 @@ dp.bot.set_my_commands([
 @dp.message_handler(state='*', commands=['compare_keywords'])
 async def compare_keywords_start(message: types.Message):
     state = dp.current_state(user=message.from_user.id)
-    await state.set_state(States.all()[1])
+    await state.set_state(States.WAITING_KEYWORDS[0])
     await message.answer(messages.COMPARE_KEYWORD_START_MESSAGE)
 
 
-@dp.message_handler(state=['waiting_keywords'])
+@dp.message_handler(state=States.WAITING_KEYWORDS)
 async def compare_keywords_get_keywords(message: types.Message):
     # products = choose_gifts(message.text)
     products = get_products()
@@ -64,7 +64,6 @@ def get_answers_by_query(callback_query: CallbackQuery):
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
-    print(message.from_user.id)
     await message.reply("Welcome message")
 
 
@@ -117,9 +116,9 @@ def get_products():
     return "kfjdgnvbkjfdnv"
 
 
-async def shutdown():
-    await dp.storage.close()
-    await dp.storage.wait_closed()
+async def shutdown(dispatcher: Dispatcher):
+    await dispatcher.storage.close()
+    await dispatcher.storage.wait_closed()
 
 
 executor.start_polling(dp, skip_updates=True, on_shutdown=shutdown)
