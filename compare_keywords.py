@@ -3,6 +3,7 @@ from nltk.corpus import wordnet as wn
 from keywords import get_keywords_koe
 from clustering_graph_db_functions import get_leaf_clusters, get_cluster_products  # commented for testing
 from db_functions import get_product_keywords, get_product  # commented for testing
+from tqdm import tqdm
 
 nltk.download('wordnet')
 
@@ -147,6 +148,7 @@ def compare_word_lists(word_weights1, word_weights2):
 
 
 def choose_gifts(information: str):
+    print("choosing gift")
     # print("Write something about your friend:")
     # information = input('>>')
     user_keywords = get_keywords_koe(information)
@@ -157,7 +159,9 @@ def choose_gifts(information: str):
     # print("User keywords", user_keywords)
     max_similarity = 0
     max_cluster_id = -1
+    print("getting clusters")
     clusters = get_leaf_clusters()
+    print("clusters received")
     for cluster_id, cluster_keywords in clusters:
         # print("Cluster keywords", cluster_keywords)
         if len(cluster_keywords) == 0:
@@ -166,9 +170,10 @@ def choose_gifts(information: str):
         if similarity > max_similarity:
             max_similarity = similarity
             max_cluster_id = cluster_id
+    print("getting products")
     product_ids = get_cluster_products(max_cluster_id)
     products_list = []
-    for product_id in product_ids:
+    for product_id in tqdm(product_ids):
         product_keywords = get_product_keywords(product_id)
         if len(product_keywords) == 0:
             continue
@@ -176,6 +181,7 @@ def choose_gifts(information: str):
         similarity = compare_word_lists(user_keywords, product_keywords)
         products_list.append((similarity, product_id))
     products_list.sort(reverse=True)
+    print("preparing answers")
     return [get_product(product[1]) for product in products_list]
     # for _, product_id in products_list:
     #     print(get_product(product_id))
