@@ -3,6 +3,7 @@ venv/
 .env
 __pycache__/
 test.*
+
 *.json
-*.txt
 *.html
+*.txt

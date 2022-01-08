@@ -4,15 +4,15 @@ import json
 from tqdm import tqdm
 
 
-with open("entire.json", 'r') as f:
+with open("data\\entire.json", 'r') as f:
+    product_id = 0
+    keyword_id = 0
+    keywords = {}
     data = json.loads(f.read())
-    for keyword in tqdm(data['keywords']):
-        nword = Keyword(keyword[1], keyword[0])
-        SessionManager().session().add(nword)
-    for product in tqdm(data['prods']):
-        nprod = Product(product[1]['amazon_id'], product[1]['cost_cents'], product[1]['name'], product[1]['description'],
-                        product[1]['reviews_count'], product[1]['avg_rating'], product[0])
+    for product in tqdm(data):
+        product = product[1]
+        nprod = Product(product['amazon_id'], product['cost_cents'], product['name'], product['description'],
+                        product['reviews_count'], product['avg_rating'], product_id)
+        product_id += 1
         SessionManager().session().add(nprod)
-    for pair in tqdm(data['pairs']):
-        SessionManager().session().add(ProductKeyword(pair[1]['product_id'], pair[1]['keyword_id']))
     SessionManager().session().commit()
