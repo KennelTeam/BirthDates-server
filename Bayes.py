@@ -1,13 +1,65 @@
-import nltk
-from nltk.corpus import wordnet as wn
+from compare_keywords import compare_word_lists
 from keywords import get_keywords_koe
-# from clustering_graph_db_functions import get_leaf_clusters, get_cluster_products  # commented for testing
-# from db_functions import get_product_keywords, get_product  # commented for testing
+from sklearn.naive_bayes import MultinomialNB
+from db_functions import get_product
+import random
+import pickle
+import numpy as np
 
-nltk.download('wordnet')
 
-###########################################
-# TEST FUNCTIONS
+K_PRODUCTS = 15
+QUESTIONS = [("Likes to cook?",  ['cook', 'food', 'taste']), ("Likes to draw?", ['painting', 'art'])]
+
+def predict_user_answer(q_keywords: list, product_keywords: dict):
+    q_keywords_dict = {word: 1 for word in q_keywords}
+    similarity = compare_word_lists(q_keywords_dict, product_keywords)
+    return 1 if similarity > 0.06 else 0
+
+
+def prepare_dataset(products_keywords: dict, question_keywords: list):
+    answers = list()
+    product_ids = []
+    for product_id, product in products_keywords.items():
+        answers.append([])
+        product_ids.append(product_id)
+        for q in question_keywords:
+            answers[-1].append(predict_user_answer(q, product))
+    return answers, product_ids
+
+
+def train_nn(answers, products):
+    clf = MultinomialNB()
+    clf.fit(answers, products)
+    data = pickle.dumps(clf)
+    with open('Bayes_model.model', 'w') as model_file:
+        print(data, file=model_file)
+
+
+def choose_gifts(user_answers):
+    with open('Bayes_model.model', 'r') as model_file:
+        clf = pickle.loads(model_file.read())
+    ans = clf.predict_proba(user_answers)
+    product_ids = clf.classes_[np.flip(np.argsort(ans))][:K_PRODUCTS]
+    return [get_product(id) for id in product_ids]
+
+
+class Session:
+    def __init__(self):
+        self.answers = [0.5] * len(QUESTIONS)
+        self.unanswered_ids = list(range(len(QUESTIONS)))
+        self.last_q_id = None
+        random.shuffle(self.unanswered_ids)
+
+    def new_answer(self, answer):
+        self.answers[self.last_q_id] = answer
+
+    def get_question(self):
+        self.last_q_id = self.unanswered_ids.pop()
+        return QUESTIONS[self.last_q_id]
+
+    def get_presents(self):
+        return choose_gifts(self.answers)
+
 
 # PRODUCTS = {
 #     "1982180587": """The Baseball 100
@@ -59,127 +111,16 @@ nltk.download('wordnet')
 # Lithium-Ion Battery Capacity: 770 mAh"""
 # }
 #
-# CLUSTERS = [
-#     ["1982180587", "B00KVI76ZS", "B00INIXU5I"],
-#     ["B08H82ZRS2", "B06X6K3HTS", "B078HSVK7M"]
+# KEYWORDS = [
+#     ['metal', 'rock', 'rap', 'pop', 'music', 'sound'],
+#     ['technologies', 'science', 'explorer'],
+#     ['gym', 'fitness', 'sports', 'yoga', 'health', 'baseball'],
+#     ['technologies', 'business', 'exploring'],
+#     ['math', 'science', 'clever', 'knowledge', 'explore']
 # ]
-
-
-# def generalize_item_v3(keywords: dict):
-#     keywords_sorted = sorted([(keywords[word], word) for word in keywords if len(wn.synsets(word)) > 0], reverse=True)
-#     # print(keywords_sorted)
-#     k_main = min(20, len(keywords_sorted))
-#     keywords_sorted = keywords_sorted[:k_main]
-#     new_synsets = dict()
-#     for idx, (k1, word1) in enumerate(keywords_sorted):
-#         synset1 = wn.synsets(word1)[0]
-#         new_synsets[synset1] = 0
-#         for k2, word2 in keywords_sorted[idx + 1:]:
-#             synset2 = wn.synsets(word2)[0]
-#             hyper = synset1.lowest_common_hypernyms(synset2)
-#             if len(hyper) > 0:
-#                 new_synsets[hyper[0]] = 0
 #
-#     print(new_synsets)
-#     for k, word in keywords_sorted:
-#         synset_w = wn.synsets(word)[0]
-#         for synset in new_synsets:
-#             sim = synset_w.path_similarity(synset)
-#             if sim is None:
-#                 sim = 0
-#             print(synset, synset_w, sim, k)
-#             new_synsets[synset] += k * sim
-#
-#     synsets_sorted = sorted([(new_synsets[syn], syn) for syn in new_synsets], reverse=True)
-#     k_synsets = min(15, len(synsets_sorted))
-#     # print(synsets_sorted[:k_synsets])
-#     synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted[:k_synsets]}
-#     return synsets_dict
-#
-#
-# def get_leaf_clusters():
-#     cl_keywords = list()
-#     for i, cl in enumerate(CLUSTERS):
-#         d = dict()
-#         for pr_id in cl:
-#             keyw = get_product_keywords(pr_id)
-#             print("Product keyw", keyw)
-#             for w, k in keyw.items():
-#                 if w == "athletes":
-#                     print(k)
-#                 if w in d:
-#                     d[w] += k
-#                 else:
-#                     d[w] = k
-#         print(d)
-#         cl_keywords.append((i, generalize_item_v3(d)))
-#     return cl_keywords
-#
-#
-# def get_cluster_products(cluster_id):
-#     return CLUSTERS[cluster_id]
-#
-#
-# def get_product_keywords(product_id):
-#     return get_keywords_koe(PRODUCTS[product_id])
-#
-# def get_product(product_id):
-#     return "https://amazon.com/dp/" + product_id
-
-
-# Women, likes books, music, technologies, music, reading, a big fan of Elon Musk
-# Men, likes tech, likes to listen music, likes computers, likes phones, headphones
-
-###########################################
-
-def compare_word_lists(word_weights1, word_weights2):
-    synsets1 = []
-    for word, k in word_weights1.items():
-        if len(wn.synsets(word)) == 0:
-            print(word)
-        synsets1.append((wn.synsets(word)[0], k))
-    synsets2 = []
-    for word, k in word_weights2.items():
-        if len(wn.synsets(word)) == 0:
-            print(word)
-        synsets2.append((wn.synsets(word)[0], k))
-    similarity = 0
-    for syn1, k1 in synsets1:
-        for syn2, k2 in synsets2:
-            sim = syn1.path_similarity(syn2)
-            if sim is None:
-                sim = 0
-            similarity += sim * k1 * k2
-    similarity /= len(word_weights1) * len(word_weights2)
-    return similarity
-
-
-def choose_gifts():
-    print("Write something about your friend:")
-    information = input('>>')
-    user_keywords = get_keywords_koe(information)
-    while len(user_keywords) < 3:
-        print("Write more, please")
-        information += input('>>')
-        user_keywords = get_keywords_koe(information)
-    # print("User keywords", user_keywords)
-    max_similarity = 0
-    max_cluster_id = -1
-    clusters = get_leaf_clusters()
-    for cluster_id, cluster_keywords in clusters:
-        # print("Cluster keywords", cluster_keywords)
-        similarity = compare_word_lists(user_keywords, cluster_keywords)
-        if similarity > max_similarity:
-            max_similarity = similarity
-            max_cluster_id = cluster_id
-    product_ids = get_cluster_products(max_cluster_id)
-    products_list = []
-    for product_id in product_ids:
-        product_keywords = get_product_keywords(product_id)
-        # print("Product keywords", product_keywords)
-        similarity = compare_word_lists(user_keywords, product_keywords)
-        products_list.append((similarity, product_id))
-    products_list.sort(reverse=True)
-    for _, product_id in products_list:
-        print(get_product(product_id))
-
+# for id, text in PRODUCTS.items():
+#     prod_keywords = get_keywords_koe(text)
+#     for question in KEYWORDS:
+#         print(id, question, ':', predict_user_answer(question, prod_keywords))
+#     print()
