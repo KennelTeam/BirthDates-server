@@ -13,6 +13,7 @@ from SessionManager import SessionManager
 from clustering_graph_db import Cluster, ClusterToKeyword, ClusterParentToChild, ClusterProductToCluster
 from tqdm import tqdm
 from pprint import pprint
+import json
 
 porter = PorterStemmer()
 KEYWORD_WEIGHT = 1
@@ -28,11 +29,25 @@ all_keywords = {}
 nltk.download('wordnet')
 
 
-def prepare_data():
-    global all_keywords
-    total = SessionManager().session().query(Product).all()
+def prepare_initials():
+    global cluster_id, keyword_id, db_clusters, db_keywords, db_product_cluster, db_parent_children, db_pairs, \
+        all_keywords
+    cluster_id = 1
+    keyword_id = 1
+    db_clusters = []
+    db_keywords = []
+    db_pairs = []
+    db_parent_children = []
+    db_product_cluster = []
+    all_keywords = {}
     keywords_labels = SessionManager().session().query(Keyword).all()
     all_keywords = {keyword.word: keyword.id for keyword in keywords_labels}
+    keyword_id = max(all_keywords.values()) + 1
+
+
+def prepare_data():
+    global all_keywords, keyword_id
+    total = SessionManager().session().query(Product).all()
     keywords = {}
     for product in tqdm(total):
         cur_keywords = db_functions.get_product_keywords(product.id)
@@ -242,6 +257,8 @@ def save_cluster(keywords, parent_id: int = 0):
 
     keyword_ids = []
     for keyword in keywords.keys():
+        if len(keyword) > 32:
+            continue
         # kw = SessionManager().session().query(ClusterKeyword).filter_by(word=keyword).all()
         if keyword not in all_keywords.keys():
             new_keyword = Keyword(keyword, keyword_id)
@@ -283,26 +300,7 @@ def clear_db():
     SessionManager().session().commit()
 
 
-def make_clustering(steps: int):
-    clear_db()
-    initial_data = prepare_data()
-    prep_data = []
-    ids_order = []
-    for id in initial_data.keys():
-        ids_order.append(id)
-        prep_data.append(initial_data[id])
-
-    print("data prepared")
-    cluster_words = [prep_data]
-    cluster_children = [[]]
-    product_ids = ids_order
-    for i in range(steps):
-        print("{} steps done".format(i))
-        new_data, new_labels = clustering_step(cluster_words[-1], CLUSTER_DENSITY**(steps - i), generalize_item_v3)
-
-        cluster_words.append(new_data)
-        cluster_children.append(new_labels)
-
+def save_all(steps: int, cluster_words, cluster_children, product_ids):
     print("saving base clusters")
     prev_ids = []
     for cluster in cluster_words[-1]:
@@ -325,3 +323,38 @@ def make_clustering(steps: int):
         add_product_to_cluster(parent_id, product_ids[id])
     print("saving to db")
     save_to_db()
+
+
+def make_clustering_predata(steps: int, initial_data):
+    prep_data = []
+    ids_order = []
+    for id in initial_data.keys():
+        ids_order.append(id)
+        prep_data.append(initial_data[id])
+
+    print("data prepared")
+    cluster_words = [prep_data]
+    cluster_children = [[]]
+    product_ids = ids_order
+    for i in range(steps):
+        print("{} steps done".format(i))
+        new_data, new_labels = clustering_step(cluster_words[-1], CLUSTER_DENSITY ** (steps - i), generalize_item_v3)
+
+        cluster_words.append(new_data)
+        cluster_children.append([int(item) for item in new_labels])
+
+    with open('clustering_info.json', 'w') as output:
+        output.write(json.dumps(
+            {
+                'words': cluster_words,
+                'children': cluster_children,
+                'product_ids': product_ids
+             }
+        ))
+    save_all(steps, cluster_words, cluster_children, product_ids)
+
+
+def make_clustering(steps: int):
+    clear_db()
+    initial_data = prepare_data()
+    make_clustering_predata(steps, initial_data)
