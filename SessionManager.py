@@ -21,12 +21,12 @@ class SessionManager:
                                               db_name=data['DATABASE_NAME']))
 
         Base.metadata.create_all(self.__engine)
-        self.__connection = self.__engine.connect()
+        # self.__connection = self.__engine.connect()
         self.__session = Session(self.__engine)
 
     def __del__(self):
         self.__session.close()
-        self.__connection.close()
+        # self.__connection.close()
 
     def session(self):
         return self.__session

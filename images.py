@@ -63,8 +63,10 @@ class ProductKeyword(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     product_id = Column(Integer, ForeignKey('product.id'))
     keyword_id = Column(Integer, ForeignKey('keyword.id'))
+    weight = Column(Float)
 
-    def __init__(self, product_id, keyword_id):
+    def __init__(self, product_id, keyword_id, weight):
         self.product_id = product_id
         self.keyword_id = keyword_id
+        self.weight = weight
 
