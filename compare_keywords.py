@@ -1,8 +1,8 @@
 import nltk
 from nltk.corpus import wordnet as wn
 from keywords import get_keywords_koe
-# from clustering_graph_db_functions import get_leaf_clusters, get_cluster_products  # commented for testing
-# from db_functions import get_product_keywords, get_product  # commented for testing
+from clustering_graph_db_functions import get_leaf_clusters, get_cluster_products  # commented for testing
+from db_functions import get_product_keywords, get_product  # commented for testing
 
 nltk.download('wordnet')
 
@@ -176,7 +176,7 @@ def choose_gifts(information: str):
         similarity = compare_word_lists(user_keywords, product_keywords)
         products_list.append((similarity, product_id))
     products_list.sort(reverse=True)
-    return products_list
+    return [get_product(product[1]) for product in products_list]
     # for _, product_id in products_list:
     #     print(get_product(product_id))
 
