@@ -31,4 +31,7 @@ def add_product(amazon_id: str, cost_cents: int, name: str, description: str, re
     SessionManager().session().commit()
 
 
+def add_product_with_koe(amazon_id: str, cost_cents: int, name: str, description: str, reviews_count: int, avg_rating: float,
+                keywords: dict):
+    pass
 

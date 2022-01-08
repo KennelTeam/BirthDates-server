@@ -2,7 +2,6 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import nltk
 from nltk.corpus import wordnet as wn
-from SessionManager import SessionManager
 from images import Product
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
@@ -14,7 +13,7 @@ from SessionManager import SessionManager
 from clustering_graph_db import Cluster, ClusterKeyword, ClusterToKeyword, ClusterParentToChild, ClusterProductToCluster
 
 porter = PorterStemmer()
-KEYWORD_WEIGHT = 6
+KEYWORD_WEIGHT = 1
 nltk.download('wordnet')
 
 
@@ -22,15 +21,15 @@ def prepare_data():
     total = SessionManager().session().query(Product).all()
     keywords = {}
     for id, product in enumerate(total):
-        text = product.name + "\n" + product.description
-        words = word_tokenize(text)
+        # text = product.name + "\n" + product.description
+        # words = word_tokenize(text)
         cur_keywords = {}
-        for word in words:
-            if word not in stopwords.words("english") and word not in punctuation:
-                word = porter.stem(word).lower()
-                if word not in cur_keywords.keys():
-                    cur_keywords[word] = 0
-                cur_keywords[word] += 1
+        # for word in words:
+        #     if word not in stopwords.words("english") and word not in punctuation:
+        #         word = porter.stem(word).lower()
+        #         if word not in cur_keywords.keys():
+        #             cur_keywords[word] = 0
+        #         cur_keywords[word] += 1
         product_keywords = db_functions.get_product_keywords(product.id)
         for word in product_keywords:
             if word not in cur_keywords.keys():
@@ -159,7 +158,7 @@ def clusterize(X, clusters_count):
     return clusters.cluster_centers_, clusters.labels_
 
 
-def clustering_step(items, clusters_count):
+def clustering_step(items, clusters_count, generalize_func=generalize_item_v3):
     prep_items = {}
     for id in items.keys():
         item = items[id]
@@ -181,7 +180,7 @@ def clustering_step(items, clusters_count):
                     if word not in cur_keywords.keys():
                         cur_keywords[word] = 0
                     cur_keywords[word] += items[item_index][word]
-        new_items.append(generalize_item_pairs(cur_keywords))
+        new_items.append(generalize_func(cur_keywords))
 
     return new_items, labels, ids_order
 
@@ -242,7 +241,7 @@ def make_clustering(steps: int):
     product_ids = []
     for i in range(steps):
         print("{} steps done".format(i))
-        new_data, new_labels, ids_order = clustering_step(cluster_words[-1], CLUSTER_DENSITY**(steps - i))
+        new_data, new_labels, ids_order = clustering_step(cluster_words[-1], CLUSTER_DENSITY**(steps - i), generalize_item_v3)
         if i == 0:
             product_ids = ids_order
         cluster_words.append(new_data)
