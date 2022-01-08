@@ -154,20 +154,22 @@ def compare_word_lists(word_weights1, word_weights2):
     return similarity
 
 
-def choose_gifts():
-    print("Write something about your friend:")
-    information = input('>>')
+def choose_gifts(information: str):
+    # print("Write something about your friend:")
+    # information = input('>>')
     user_keywords = get_keywords_koe(information)
-    while len(user_keywords) < 3:
-        print("Write more, please")
-        information += input('>>')
-        user_keywords = get_keywords_koe(information)
+    # while len(user_keywords) < 3:
+    #     print("Write more, please")
+    #     information += input('>>')
+    #     user_keywords = get_keywords_koe(information)
     # print("User keywords", user_keywords)
     max_similarity = 0
     max_cluster_id = -1
     clusters = get_leaf_clusters()
     for cluster_id, cluster_keywords in clusters:
         # print("Cluster keywords", cluster_keywords)
+        if len(cluster_keywords) == 0:
+            continue
         similarity = compare_word_lists(user_keywords, cluster_keywords)
         if similarity > max_similarity:
             max_similarity = similarity
@@ -176,10 +178,13 @@ def choose_gifts():
     products_list = []
     for product_id in product_ids:
         product_keywords = get_product_keywords(product_id)
+        if len(product_keywords) == 0:
+            continue
         # print("Product keywords", product_keywords)
         similarity = compare_word_lists(user_keywords, product_keywords)
         products_list.append((similarity, product_id))
     products_list.sort(reverse=True)
-    for _, product_id in products_list:
-        print(get_product(product_id))
+    return products_list
+    # for _, product_id in products_list:
+    #     print(get_product(product_id))
 
