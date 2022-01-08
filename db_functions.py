@@ -3,10 +3,11 @@ from images import Product, ProductKeyword, Keyword
 
 
 def get_product_keywords(product_id: int):
-    results = SessionManager().session().query(Keyword).filter(Keyword.id.in_(
-        SessionManager().session().query(ProductKeyword.keyword_id).filter_by(product_id=product_id)
-    )).all()
-    return [res.word for res in results]
+    results = SessionManager().session().query(ProductKeyword, Keyword) \
+        .filter(ProductKeyword.keyword_id == Keyword.id) \
+        .filter(ProductKeyword.product_id == product_id) \
+        .all()
+    return {keyword.word: pair.weight for pair, keyword in results}
 
 
 def get_product(product_id: int):
