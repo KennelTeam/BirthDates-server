@@ -94,10 +94,13 @@ class TextRank4Keyword():
         node_weight = OrderedDict(sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
         counter = 1
         word_koe = dict()
-        max_k = list(node_weight.items())[0][1]
+        keywords = list(node_weight.items())
+        if len(keywords) == 0:
+            return dict()
+        max_k = keywords[0][1]
         for word, k in node_weight.items():
             if len(wn.synsets(word)) == 0:
-                print(word)
+                # print(word)
                 continue
             word_koe[word] = k / max_k
             if counter == number:

@@ -1,5 +1,6 @@
 from SessionManager import SessionManager
-from clustering_graph_db import ClusterProductToCluster, ClusterParentToChild, ClusterToKeyword, ClusterKeyword, Cluster
+from clustering_graph_db import ClusterProductToCluster, ClusterParentToChild, ClusterToKeyword, Cluster
+from images import Keyword
 from sqlalchemy.sql import exists
 
 
@@ -21,8 +22,8 @@ def get_child_clusters(cluster_id: int):
 
 
 def get_cluster_keywords(cluster_id: int):
-    data = SessionManager().session().query(ClusterToKeyword, ClusterKeyword)\
-        .filter(ClusterToKeyword.keyword_id == ClusterKeyword.id)\
+    data = SessionManager().session().query(ClusterToKeyword, Keyword)\
+        .filter(ClusterToKeyword.keyword_id == Keyword.id)\
         .filter(ClusterToKeyword.cluster_id == cluster_id)\
         .all()
     return {keyword.word: item.weight for item, keyword in data}

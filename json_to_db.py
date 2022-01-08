@@ -12,6 +12,7 @@ BATCH_SIZE = 1000
 with open("data\\entire.json", 'r') as f:
     product_id = 1
     keyword_id = 1
+    skipped = 0
     keywords = {}
     for item in SessionManager().session().query(Keyword).all():
         keywords[item.word] = item.id
@@ -29,6 +30,7 @@ with open("data\\entire.json", 'r') as f:
 
     for index, product in tqdm(enumerate(data)):
         if index > 0 and index % BATCH_SIZE == 0:
+            print("{} skipped".format(skipped))
             print("saving products")
             SessionManager().session().bulk_save_objects(db_products)
             SessionManager().session().commit()
@@ -49,6 +51,9 @@ with open("data\\entire.json", 'r') as f:
         product = product[1]
         text = product['name'] + "\n" + product['description']
         cur_keywords = get_keywords_koe(text)
+        if len(cur_keywords.keys()) == 0:
+            skipped += 1
+            continue
         nprod = Product(product['amazon_id'], product['cost_cents'], product['name'], product['description'],
                         product['reviews_count'], product['avg_rating'], product_id)
 
