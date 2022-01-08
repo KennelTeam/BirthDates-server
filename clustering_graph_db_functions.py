@@ -9,6 +9,12 @@ def get_root_clusters():
     return [(cluster.id, get_cluster_keywords(cluster.id)) for cluster in roots]
 
 
+def get_leaf_clusters():
+    roots = SessionManager().session().query(Cluster).filter(~exists().where(ClusterParentToChild.parent_id == Cluster.id)
+    ).all()
+    return [(cluster.id, get_cluster_keywords(cluster.id)) for cluster in roots]
+
+
 def get_child_clusters(cluster_id: int):
     child = SessionManager().session().query(ClusterParentToChild).filter_by(parent_id=cluster_id).all()
     return [(cluster.id, get_cluster_keywords(cluster.id)) for cluster in child]
