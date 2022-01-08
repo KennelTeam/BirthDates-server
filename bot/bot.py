@@ -1,15 +1,45 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.contrib.middlewares.logging import LoggingMiddleware
+from aiogram.dispatcher.filters.builtin import Text
 
-TOKEN = '5052322493:AAHOqvNEnY-TbhuATpxSTV7sX5InTwWx4Bc'
+import messages
+from compare_keywords import choose_gifts
+from states import States
+from config import get_token_from_dotenv
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=TOKEN)
-dp = Dispatcher(bot)
+bot = Bot(token=get_token_from_dotenv())
+dp = Dispatcher(bot, storage=MemoryStorage())
+
+dp.middleware.setup(LoggingMiddleware())
 
 check_mark_emoji = '✅'
+
+dp.bot.set_my_commands([
+    types.BotCommand('start', 'Start bot'),
+    types.BotCommand('help', 'Get Help'),
+    types.BotCommand('compare_keywords', 'Compare keywords algorithm'),
+])
+
+
+@dp.message_handler(state='*', commands=['compare_keywords'])
+async def compare_keywords_start(message: types.Message):
+    state = dp.current_state(user=message.from_user.id)
+    await state.set_state(States.all()[1])
+    await message.answer(messages.COMPARE_KEYWORD_START_MESSAGE)
+
+
+@dp.message_handler(state=['waiting_keywords'])
+async def compare_keywords_get_keywords(message: types.Message):
+    # products = choose_gifts(message.text)
+    products = get_products()
+    state = dp.current_state(user=message.from_user.id)
+    await state.reset_state()
+    await message.answer(str(products))
 
 
 def get_keyboard(answers: list, is_multians=False):
@@ -34,10 +64,11 @@ def get_answers_by_query(callback_query: CallbackQuery):
 
 @dp.message_handler(commands=['start', 'help'])
 async def send_welcome(message: types.Message):
+    print(message.from_user.id)
     await message.reply("Welcome message")
 
 
-@dp.callback_query_handler(lambda m: m.data.startswith('ans_'))
+@dp.callback_query_handler(Text(startswith='ans_'))
 async def callback_ans(query: CallbackQuery):
     ans_index = int(query.data.split('_')[1])
     # await query.message.edit_reply_markup(None)
@@ -45,7 +76,7 @@ async def callback_ans(query: CallbackQuery):
     await query.answer()
 
 
-@dp.callback_query_handler(lambda m: m.data.startswith('multians_'))
+@dp.callback_query_handler(Text(startswith='multians_'))
 async def callback_multians(query: CallbackQuery):
     action = query.data.split('_')[1]
     answers_list = get_answers_by_query(query)[:-1]
@@ -82,4 +113,13 @@ async def question2(message: types.Message):
     await message.answer(question_text, reply_markup=get_keyboard(answers_list, is_multians=True))
 
 
-executor.start_polling(dp, skip_updates=True)
+def get_products():
+    return "kfjdgnvbkjfdnv"
+
+
+async def shutdown():
+    await dp.storage.close()
+    await dp.storage.wait_closed()
+
+
+executor.start_polling(dp, skip_updates=True, on_shutdown=shutdown)
