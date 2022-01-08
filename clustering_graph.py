@@ -3,9 +3,6 @@ from sklearn.preprocessing import StandardScaler
 import nltk
 from nltk.corpus import wordnet as wn
 from images import Product
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
-from string import punctuation
 from nltk.stem import PorterStemmer
 import db_functions
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -61,9 +58,9 @@ def generalize_item(keywords: dict):
     k_synsets = min(15, len(synsets_sorted))
     # print(synsets_sorted[:k_synsets])
     synsets_sorted = synsets_sorted[:k_synsets]
-    max_k = synsets_sorted[0]
+    max_k = synsets_sorted[0][0]
     for i in range(len(synsets_sorted)):
-        synsets_sorted /= max_k
+        synsets_sorted[i] = synsets_sorted[i][0] / max_k, synsets_sorted[i][1]
     synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted}
     return synsets_dict
 
@@ -102,9 +99,9 @@ def generalize_item_pairs(keywords: dict):
     k_synsets = min(15, len(synsets_sorted))
     # print(synsets_sorted[:k_synsets])
     synsets_sorted = synsets_sorted[:k_synsets]
-    max_k = synsets_sorted[0]
+    max_k = synsets_sorted[0][0]
     for i in range(len(synsets_sorted)):
-        synsets_sorted /= max_k
+        synsets_sorted[i] = synsets_sorted[i][0] / max_k, synsets_sorted[i][1]
     synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted}
     return synsets_dict
 
@@ -139,9 +136,9 @@ def generalize_item_v3(keywords: dict):
     k_synsets = min(15, len(synsets_sorted))
     # print(synsets_sorted[:k_synsets])
     synsets_sorted = synsets_sorted[:k_synsets]
-    max_k = synsets_sorted[0]
+    max_k = synsets_sorted[0][0]
     for i in range(len(synsets_sorted)):
-        synsets_sorted /= max_k
+        synsets_sorted[i] = synsets_sorted[i][0] / max_k, synsets_sorted[i][1]
     synsets_dict = {syn.name().split('.')[0]: k for k, syn in synsets_sorted}
     return synsets_dict
 
