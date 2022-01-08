@@ -26,6 +26,13 @@ dp.bot.set_my_commands([
 ])
 
 
+def get_product_text(product: dict):
+    ...
+    # name = product['name']
+    # link = product['link']
+    # return name + '\n' + link
+
+
 async def show_product(user_id, products: list):
     product_index = 0
     product_keyboard = InlineKeyboardMarkup(row_width=2).add(
@@ -44,11 +51,15 @@ async def show_product(user_id, products: list):
             # adding product to database...
             return
         change_num = 1 if action == 'next' else -1
-        try:
-            await query.message.edit_text(text=str(products[product_index + change_num]), reply_markup=product_keyboard)
+        if 0 <= product_index + change_num < len(products):
+            await query.message.edit_text(
+                # text=get_product_text(products[product_index + change_num]),
+                text=str(products[product_index + change_num]),
+                reply_markup=product_keyboard
+            )
             product_index += change_num
-        except IndexError:
-            await query.answer()
+
+        await query.answer()
 
 
 @dp.message_handler(state='*', commands=['compare_keywords'])
@@ -60,12 +71,11 @@ async def compare_keywords_start(message: types.Message):
 
 @dp.message_handler(state=States.WAITING_KEYWORDS)
 async def compare_keywords_get_keywords(message: types.Message):
-    # products = choose_gifts(message.text)
-    products = get_products()
+    products = choose_gifts(message.text)
+    # products = get_products()
     await show_product(message.from_user.id, products)
     state = dp.current_state(user=message.from_user.id)
     await state.reset_state()
-    await message.answer(str(products))
 
 
 def get_keyboard(answers: list, is_multians=False):
@@ -88,9 +98,14 @@ def get_answers_by_query(callback_query: CallbackQuery):
         return [j[0]['text'] for j in i[1]]
 
 
-@dp.message_handler(commands=['start', 'help'])
+@dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    await message.reply("Welcome message")
+    await message.reply(messages.START_MESSAGE)
+
+
+@dp.message_handler(commands=['help'])
+async def send_welcome(message: types.Message):
+    await message.reply(messages.HELP_MESSAGE)
 
 
 @dp.callback_query_handler(Text(startswith='ans_'))
@@ -145,7 +160,7 @@ async def shutdown(dispatcher: Dispatcher):
 
 def get_products():
     return [
-        {'asin': 'B08RQQFQKL1',
+        {'asin': 'B08RQQFQKL',
          'avg_rating': 4.2,
          'cost': 4999,
          'description': 'About this item    CONVERTIBLE 2-IN-1 DESIGN: This flip-open '
@@ -171,10 +186,10 @@ def get_products():
                         'x 15”H    \n'
                         '› See more product details',
          'link': 'https://amazon.com/dp/B08RQQFQKL',
-         'name': 'Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
+         'name': '1 Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
                  'for Kids by Delta Children',
          'reviews_count': 2},
-        {'asin': 'B08RQQFQKL2',
+        {'asin': 'B08RQQFQKL',
          'avg_rating': 4.2,
          'cost': 4999,
          'description': 'About this item    CONVERTIBLE 2-IN-1 DESIGN: This flip-open '
@@ -200,10 +215,10 @@ def get_products():
                         'x 15”H    \n'
                         '› See more product details',
          'link': 'https://amazon.com/dp/B08RQQFQKL',
-         'name': 'Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
+         'name': '2 Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
                  'for Kids by Delta Children',
          'reviews_count': 2},
-        {'asin': 'B08RQQFQKL3',
+        {'asin': 'B08RQQFQKL',
          'avg_rating': 4.2,
          'cost': 4999,
          'description': 'About this item    CONVERTIBLE 2-IN-1 DESIGN: This flip-open '
@@ -229,10 +244,10 @@ def get_products():
                         'x 15”H    \n'
                         '› See more product details',
          'link': 'https://amazon.com/dp/B08RQQFQKL',
-         'name': 'Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
+         'name': '3 Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
                  'for Kids by Delta Children',
          'reviews_count': 2},
-        {'asin': 'B08RQQFQKL4',
+        {'asin': 'B08RQQFQKL',
          'avg_rating': 4.2,
          'cost': 4999,
          'description': 'About this item    CONVERTIBLE 2-IN-1 DESIGN: This flip-open '
@@ -258,7 +273,7 @@ def get_products():
                         'x 15”H    \n'
                         '› See more product details',
          'link': 'https://amazon.com/dp/B08RQQFQKL',
-         'name': 'Chair - 2-in-1 Convertible Chair to Lounger '
+         'name': '4 Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
                  'for Kids by Delta Children',
          'reviews_count': 2}
     ]
