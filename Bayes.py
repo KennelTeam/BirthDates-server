@@ -82,12 +82,12 @@ def train_nn(answers, products):
     clf = MultinomialNB()
     clf.fit(answers, products)
     data = pickle.dumps(clf)
-    with open('Bayes_model.model', 'wb') as model_file:
+    with open('Bayes_model_bytes.model', 'wb') as model_file:
         print(data, file=model_file)
 
 
 def choose_gifts(user_answers):
-    with open('Bayes_model.model', 'rb') as model_file:
+    with open('Bayes_model_bytes.model', 'rb') as model_file:
         clf = pickle.loads(model_file.read())
     ans = clf.predict_proba(user_answers)
     product_ids = clf.classes_[np.flip(np.argsort(ans))][:K_PRODUCTS]
