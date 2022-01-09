@@ -1,6 +1,5 @@
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
-import nltk
 from nltk.corpus import wordnet as wn
 from images import Product, Keyword
 from nltk.stem import PorterStemmer
@@ -23,7 +22,6 @@ db_pairs = []
 db_parent_children = []
 db_product_cluster = []
 all_keywords = {}
-nltk.download('wordnet')
 
 
 def prepare_initials():

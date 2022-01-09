@@ -5,7 +5,8 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher.filters.builtin import Text
 
-import messages
+from consts import Messages
+from consts import Commands
 from compare_keywords import choose_gifts
 from states import States
 from config import get_token_from_dotenv
@@ -52,12 +53,12 @@ async def show_product(user_id, products: list):
             return
         change_num = 1 if action == 'next' else -1
         if 0 <= product_index + change_num < len(products):
+            product_index += change_num
             await query.message.edit_text(
                 # text=get_product_text(products[product_index + change_num]),
-                text=str(products[product_index + change_num]),
+                text=str(products[product_index]),
                 reply_markup=product_keyboard
             )
-            product_index += change_num
 
         await query.answer()
 
@@ -66,7 +67,7 @@ async def show_product(user_id, products: list):
 async def compare_keywords_start(message: types.Message):
     state = dp.current_state(user=message.from_user.id)
     await state.set_state(States.WAITING_KEYWORDS[0])
-    await message.answer(messages.COMPARE_KEYWORD_START_MESSAGE)
+    await message.answer(Messages.COMPARE_KEYWORD_START_MESSAGE)
 
 
 @dp.message_handler(state=States.WAITING_KEYWORDS)
@@ -100,12 +101,12 @@ def get_answers_by_query(callback_query: CallbackQuery):
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    await message.reply(messages.START_MESSAGE)
+    await message.reply(Messages.START_MESSAGE)
 
 
 @dp.message_handler(commands=['help'])
 async def send_welcome(message: types.Message):
-    await message.reply(messages.HELP_MESSAGE)
+    await message.reply(Messages.HELP_MESSAGE)
 
 
 @dp.callback_query_handler(Text(startswith='ans_'))
@@ -156,127 +157,6 @@ async def question2(message: types.Message):
 async def shutdown(dispatcher: Dispatcher):
     await dispatcher.storage.close()
     await dispatcher.storage.wait_closed()
-
-
-def get_products():
-    return [
-        {'asin': 'B08RQQFQKL',
-         'avg_rating': 4.2,
-         'cost': 4999,
-         'description': 'About this item    CONVERTIBLE 2-IN-1 DESIGN: This flip-open '
-                        'chair converts to a lounger/sleeper| Ideal for reading, '
-                        'relaxing, playing or sleeping, your child will enjoy this '
-                        'couch with siblings/friends | Recommended for ages 18 months+ '
-                        '| Fits 1 to 2 small children    COMFY FOAM CONSTRUCTION: '
-                        'Supportive foam keeps its shape and provides all-day comfort '
-                        '| Soft and durable slipcover features side pocket to keep '
-                        'books/tablet within reach | Lightweight chair is portable, '
-                        'great for bedrooms, playrooms, gaming or studying    '
-                        'STAIN-RESISTANT: Keep chair looking new with the built-in '
-                        'Scotchgard stain release finish that helps most stains wash '
-                        'out during normal laundering | Chair features a '
-                        'machine-washable slipcover that zips off    CHILD-SAFE '
-                        'ZIPPER: To prevent kids from opening the chair, we use a '
-                        'childproof safety zipper that comes without a pull, it can '
-                        'only be opened using a paperclip | Chair meets or exceeds '
-                        'government and ASTM safety standards    EASY TO UNBOX: Ships '
-                        'in a super-small box | Assembly required | Once unboxed chair '
-                        'expands 5x (may take 24 hours to fully expand) | Chair: '
-                        '23.5”W x 16.5”D x 15”H| Lounger Flipped Open: 23.5”W x 40.5”D '
-                        'x 15”H    \n'
-                        '› See more product details',
-         'link': 'https://amazon.com/dp/B08RQQFQKL',
-         'name': '1 Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
-                 'for Kids by Delta Children',
-         'reviews_count': 2},
-        {'asin': 'B08RQQFQKL',
-         'avg_rating': 4.2,
-         'cost': 4999,
-         'description': 'About this item    CONVERTIBLE 2-IN-1 DESIGN: This flip-open '
-                        'chair converts to a lounger/sleeper| Ideal for reading, '
-                        'relaxing, playing or sleeping, your child will enjoy this '
-                        'couch with siblings/friends | Recommended for ages 18 months+ '
-                        '| Fits 1 to 2 small children    COMFY FOAM CONSTRUCTION: '
-                        'Supportive foam keeps its shape and provides all-day comfort '
-                        '| Soft and durable slipcover features side pocket to keep '
-                        'books/tablet within reach | Lightweight chair is portable, '
-                        'great for bedrooms, playrooms, gaming or studying    '
-                        'STAIN-RESISTANT: Keep chair looking new with the built-in '
-                        'Scotchgard stain release finish that helps most stains wash '
-                        'out during normal laundering | Chair features a '
-                        'machine-washable slipcover that zips off    CHILD-SAFE '
-                        'ZIPPER: To prevent kids from opening the chair, we use a '
-                        'childproof safety zipper that comes without a pull, it can '
-                        'only be opened using a paperclip | Chair meets or exceeds '
-                        'government and ASTM safety standards    EASY TO UNBOX: Ships '
-                        'in a super-small box | Assembly required | Once unboxed chair '
-                        'expands 5x (may take 24 hours to fully expand) | Chair: '
-                        '23.5”W x 16.5”D x 15”H| Lounger Flipped Open: 23.5”W x 40.5”D '
-                        'x 15”H    \n'
-                        '› See more product details',
-         'link': 'https://amazon.com/dp/B08RQQFQKL',
-         'name': '2 Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
-                 'for Kids by Delta Children',
-         'reviews_count': 2},
-        {'asin': 'B08RQQFQKL',
-         'avg_rating': 4.2,
-         'cost': 4999,
-         'description': 'About this item    CONVERTIBLE 2-IN-1 DESIGN: This flip-open '
-                        'chair converts to a lounger/sleeper| Ideal for reading, '
-                        'relaxing, playing or sleeping, your child will enjoy this '
-                        'couch with siblings/friends | Recommended for ages 18 months+ '
-                        '| Fits 1 to 2 small children    COMFY FOAM CONSTRUCTION: '
-                        'Supportive foam keeps its shape and provides all-day comfort '
-                        '| Soft and durable slipcover features side pocket to keep '
-                        'books/tablet within reach | Lightweight chair is portable, '
-                        'great for bedrooms, playrooms, gaming or studying    '
-                        'STAIN-RESISTANT: Keep chair looking new with the built-in '
-                        'Scotchgard stain release finish that helps most stains wash '
-                        'out during normal laundering | Chair features a '
-                        'machine-washable slipcover that zips off    CHILD-SAFE '
-                        'ZIPPER: To prevent kids from opening the chair, we use a '
-                        'childproof safety zipper that comes without a pull, it can '
-                        'only be opened using a paperclip | Chair meets or exceeds '
-                        'government and ASTM safety standards    EASY TO UNBOX: Ships '
-                        'in a super-small box | Assembly required | Once unboxed chair '
-                        'expands 5x (may take 24 hours to fully expand) | Chair: '
-                        '23.5”W x 16.5”D x 15”H| Lounger Flipped Open: 23.5”W x 40.5”D '
-                        'x 15”H    \n'
-                        '› See more product details',
-         'link': 'https://amazon.com/dp/B08RQQFQKL',
-         'name': '3 Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
-                 'for Kids by Delta Children',
-         'reviews_count': 2},
-        {'asin': 'B08RQQFQKL',
-         'avg_rating': 4.2,
-         'cost': 4999,
-         'description': 'About this item    CONVERTIBLE 2-IN-1 DESIGN: This flip-open '
-                        'chair converts to a lounger/sleeper| Ideal for reading, '
-                        'relaxing, playing or sleeping, your child will enjoy this '
-                        'couch with siblings/friends | Recommended for ages 18 months+ '
-                        '| Fits 1 to 2 small children    COMFY FOAM CONSTRUCTION: '
-                        'Supportive foam keeps its shape and provides all-day comfort '
-                        '| Soft and durable slipcover features side pocket to keep '
-                        'books/tablet within reach | Lightweight chair is portable, '
-                        'great for bedrooms, playrooms, gaming or studying    '
-                        'STAIN-RESISTANT: Keep chair looking new with the built-in '
-                        'Scotchgard stain release finish that helps most stains wash '
-                        'out during normal laundering | Chair features a '
-                        'machine-washable slipcover that zips off    CHILD-SAFE '
-                        'ZIPPER: To prevent kids from opening the chair, we use a '
-                        'childproof safety zipper that comes without a pull, it can '
-                        'only be opened using a paperclip | Chair meets or exceeds '
-                        'government and ASTM safety standards    EASY TO UNBOX: Ships '
-                        'in a super-small box | Assembly required | Once unboxed chair '
-                        'expands 5x (may take 24 hours to fully expand) | Chair: '
-                        '23.5”W x 16.5”D x 15”H| Lounger Flipped Open: 23.5”W x 40.5”D '
-                        'x 15”H    \n'
-                        '› See more product details',
-         'link': 'https://amazon.com/dp/B08RQQFQKL',
-         'name': '4 Batman Cozee Flip-Out Chair - 2-in-1 Convertible Chair to Lounger '
-                 'for Kids by Delta Children',
-         'reviews_count': 2}
-    ]
 
 
 executor.start_polling(dp, skip_updates=True, on_shutdown=shutdown)

@@ -1,6 +1,5 @@
+# import nltk
 import concurrent
-
-import nltk
 from nltk.corpus import wordnet as wn
 from keywords import get_keywords_koe
 from clustering_graph_db_functions import get_leaf_clusters, get_cluster_products  # commented for testing
@@ -11,7 +10,7 @@ from pprint import pprint
 from threading import Lock
 synset_lock = Lock()
 
-nltk.download('wordnet')
+# nltk.download('wordnet')
 
 ###########################################
 # TEST FUNCTIONS

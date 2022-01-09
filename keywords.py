@@ -2,10 +2,10 @@ from collections import OrderedDict
 import numpy as np
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
-import nltk
+# import nltk
 from nltk.corpus import wordnet as wn
 
-nltk.download('wordnet')
+# nltk.download('wordnet')
 
 nlp = spacy.load('en_core_web_sm')
 
