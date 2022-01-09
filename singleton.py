@@ -1,3 +1,8 @@
+# copyright KennelTeam
+# AndrusovN for any questions
+# singleton decorator for classes
+
+
 def singleton(class_):
     instances = {}
 

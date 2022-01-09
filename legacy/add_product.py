@@ -2,6 +2,8 @@ from images import Keyword, ProductKeyword, Product
 from SessionManager import SessionManager
 
 
+# LEGACY !!!!
+# Adds product to database (quite slow function)
 def add_product(amazon_id: str, cost_cents: int, name: str, description: str, reviews_count: int, avg_rating: float,
                 keywords: list):
     keyword_ids = []

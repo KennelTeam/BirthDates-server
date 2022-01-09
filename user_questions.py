@@ -72,37 +72,3 @@ class TreeSession:
 
     def get_question(self):
         return self.words
-
-
-# test = [
-#     {
-#         "abstraction": 1,
-#         "music": 78,
-#         "guitar": 30,
-#         "sound": 88,
-#         "note": 19,
-#         "piano": 40,
-#         "violin": 15,
-#         "art": 22
-#     },
-#     {
-#         "phone": 55,
-#         "computer": 65,
-#         "call": 15,
-#         "abstraction": 2,
-#         "wireless": 20,
-#         "sound": 58,
-#         "headphones": 49
-#     },
-#     {
-#         "abstraction": 3,
-#         "book": 45,
-#         "travel": 35,
-#         "hiking": 17,
-#         "tent": 57,
-#         "outdoor": 69,
-#         "adventure": 20
-#     }
-# ]
-#
-# print(user_choose(test))

@@ -1,8 +1,12 @@
+# copyright KennelTeam
+# AndrusovN for any questions
+# File with main functions to work with Questions database part
 from questions_db import QuestionToKeyword, Question
 from images import Keyword
 from SessionManager import SessionManager
 
 
+# Adds question to DB
 def add_question(text: str, keywords: list):
     question = Question(text)
     SessionManager().session().add(question)
@@ -22,6 +26,7 @@ def add_question(text: str, keywords: list):
     return question.id
 
 
+# Gets list of questions from db
 def get_all_questions():
     questions = SessionManager().session().query(Question).all()
     keywords = SessionManager().session().query(QuestionToKeyword, Keyword)\

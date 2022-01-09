@@ -1,7 +1,11 @@
+# copyright KennelTeam
+# AndrusovN for any questions
+# File with questions DB schema
 from images import Base
 from sqlalchemy import *
 
 
+# Question ORM class
 class Question(Base):
     __tablename__ = "question"
 
@@ -12,6 +16,7 @@ class Question(Base):
         self.text = text
 
 
+# Relations between questions and keywords
 class QuestionToKeyword(Base):
     __tablename__ = "question_to_text"
 

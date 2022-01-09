@@ -1,9 +1,13 @@
+# copyright KennelTeam
+# AndrusovN for any questions
+# File with main database part schema
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import *
 
 Base = declarative_base()
 
 
+# Keywords table (with all keywords for all parts of program)
 class Keyword(Base):
     __tablename__ = 'keyword'
 
@@ -22,6 +26,7 @@ class Keyword(Base):
         }
 
 
+# Product table
 class Product(Base):
     __tablename__ = 'product'
 
@@ -58,6 +63,7 @@ class Product(Base):
         }
 
 
+# relations between products and keywords
 class ProductKeyword(Base):
     __tablename__ = 'product_keyword'
 
