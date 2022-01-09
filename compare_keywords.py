@@ -1,10 +1,10 @@
-import nltk
+# import nltk
 from nltk.corpus import wordnet as wn
 from keywords import get_keywords_koe
 from clustering_graph_db_functions import get_leaf_clusters, get_cluster_products  # commented for testing
 from db_functions import get_product_keywords, get_product  # commented for testing
 
-nltk.download('wordnet')
+# nltk.download('wordnet')
 
 ###########################################
 # TEST FUNCTIONS
