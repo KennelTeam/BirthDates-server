@@ -12,7 +12,7 @@ def get_users_favourite(user_id: int):
 
 
 def add_to_favourite(user_id: int, product_id: int):
-    user = SessionManager().session().query(User).filter_by(user_id).all()
+    user = SessionManager().session().query(User).filter_by(telegram_id=user_id).all()
     if len(user) == 0:
         SessionManager().session().add(User(user_id))
         SessionManager().session().commit()

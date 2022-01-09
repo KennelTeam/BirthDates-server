@@ -8,6 +8,7 @@ class Messages:
     HELP_MESSAGE = 'help message...'
     START_MESSAGE = 'start message...'
     COMPARE_KEYWORD_START_MESSAGE = 'Start "Compare Keywords" algorithm...'
+    TREE_START_MESSAGE = 'Start "Tree" algorithm'
 
 
 @singleton

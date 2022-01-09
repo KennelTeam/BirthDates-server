@@ -18,7 +18,8 @@ def get_leaf_clusters():
 
 def get_child_clusters(cluster_id: int):
     child = SessionManager().session().query(ClusterParentToChild).filter_by(parent_id=cluster_id).all()
-    return [(cluster.id, get_cluster_keywords(cluster.id)) for cluster in child]
+    print([c.child_id for c in child])
+    return list(get_clusters_keywords([c.child_id for c in child]).items())
 
 
 def get_cluster_keywords(cluster_id: int):
@@ -43,4 +44,4 @@ def get_clusters_keywords(cluster_ids: list):
 
 def get_cluster_products(cluster_id: int):
     data = SessionManager().session().query(ClusterProductToCluster).filter_by(cluster_id=cluster_id).all()
-    return [product.id for product in data]
+    return [product.product_id for product in data]
