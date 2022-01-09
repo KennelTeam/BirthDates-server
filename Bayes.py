@@ -1,3 +1,5 @@
+from pprint import pprint
+
 from compare_keywords import compare_word_lists, compare_word_list_precalced, prepare_calcs
 from keywords import get_keywords_koe
 from sklearn.naive_bayes import MultinomialNB
@@ -15,7 +17,7 @@ from nltk.corpus import wordnet as wn
 
 
 K_PRODUCTS = 15
-QUESTIONS = None
+QUESTIONS = get_all_questions()
 
 mutex_nltk = tr.Lock()
 mutex_files = tr.Lock()
@@ -87,7 +89,7 @@ def train_nn(answers, products):
 
 
 def choose_gifts(user_answers):
-    with open('Bayes_model.model', 'rb') as model_file:
+    with open('../Bayes_model.model', 'rb') as model_file:
         clf = pickle.loads(model_file.read())
     ans = clf.predict_proba(user_answers)
     product_ids = clf.classes_[np.flip(np.argsort(ans))][:K_PRODUCTS]
