@@ -81,17 +81,20 @@ class TextRank4Keyword():
 
         # Normalize matrix by column
         norm = np.sum(g, axis=0)
-        g_norm = np.divide(g, norm, where=norm != 0)  # this is ignore the 0 element in norm
+        # this is ignore the 0 element in norm
+        g_norm = np.divide(g, norm, where=norm != 0)
 
         return g_norm
 
     def get_keywords(self, number=10):
         """Print top number keywords"""
-        node_weight = OrderedDict(sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
+        node_weight = OrderedDict(
+            sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
         return list(node_weight)[:min(number, len(node_weight))]
 
     def get_keywords_koe(self, number=10):
-        node_weight = OrderedDict(sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
+        node_weight = OrderedDict(
+            sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
         counter = 1
         word_koe = dict()
         keywords = list(node_weight.items())
@@ -120,7 +123,8 @@ class TextRank4Keyword():
         doc = nlp(text)
 
         # Filter sentences
-        sentences = self.sentence_segment(doc, candidate_pos, lower)  # list of list of words
+        sentences = self.sentence_segment(
+            doc, candidate_pos, lower)  # list of list of words
 
         # Build vocabulary
         vocab = self.get_vocab(sentences)
@@ -153,13 +157,15 @@ class TextRank4Keyword():
 
 def get_keywords(text):
     tr4w = TextRank4Keyword()
-    tr4w.analyze(text, candidate_pos=['NOUN', 'PROPN'], window_size=4, lower=True)
+    tr4w.analyze(text, candidate_pos=[
+                 'NOUN', 'PROPN'], window_size=4, lower=True)
     return tr4w.get_keywords(10)
 
 
 def get_keywords_koe(text):
     tr4w = TextRank4Keyword()
-    tr4w.analyze(text, candidate_pos=['NOUN', 'VERB'], window_size=4, lower=True)
+    tr4w.analyze(text, candidate_pos=[
+                 'NOUN', 'VERB'], window_size=4, lower=True)
     return tr4w.get_keywords_koe(10)
 
 
