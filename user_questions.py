@@ -5,6 +5,8 @@ from pprint import pprint
 
 
 def words_to_ask(clusters_list):
+    """Gets list of tuples of cluster id and dict of cluster keywords and it's coefficients
+    Returns words, that most important to ask"""
     words_weight = dict()
     for cl_idx, (cl_id, cl) in enumerate(clusters_list):
         for word, weight in cl.items():
@@ -25,6 +27,8 @@ def words_to_ask(clusters_list):
 
 
 def choose_cluster(choosed_words, cluster_list):
+    """Gets list of words, that was choosed by user and list of clusters in the same format that words_to_ask() gets
+    Returns id of cluster that choosed user, basing on words, that he choose"""
     # print(choosed_words)
 
     cluster_points = [0] * len(cluster_list)
@@ -47,12 +51,15 @@ def user_choose(clusters_list):
 
 
 class TreeSession:
+    """Class for interaction between bot and algorithm functions"""
     def __init__(self):
         self.clusters = get_root_clusters()
         self.words = words_to_ask(self.clusters)
         self.products = []
 
     def new_answer(self, answers):
+        """Gets list of words that choosed user
+        Returns list of products if user has replied enough questions and [] if he hasn't"""
         pprint(self.clusters)
         new_cluster_id = self.clusters[choose_cluster(answers, self.clusters)][0]
         self.clusters = get_child_clusters(new_cluster_id)
@@ -71,38 +78,5 @@ class TreeSession:
         return self.products
 
     def get_question(self):
+        """Returns list of words needed to ask"""
         return self.words
-
-
-# test = [
-#     {
-#         "abstraction": 1,
-#         "music": 78,
-#         "guitar": 30,
-#         "sound": 88,
-#         "note": 19,
-#         "piano": 40,
-#         "violin": 15,
-#         "art": 22
-#     },
-#     {
-#         "phone": 55,
-#         "computer": 65,
-#         "call": 15,
-#         "abstraction": 2,
-#         "wireless": 20,
-#         "sound": 58,
-#         "headphones": 49
-#     },
-#     {
-#         "abstraction": 3,
-#         "book": 45,
-#         "travel": 35,
-#         "hiking": 17,
-#         "tent": 57,
-#         "outdoor": 69,
-#         "adventure": 20
-#     }
-# ]
-#
-# print(user_choose(test))

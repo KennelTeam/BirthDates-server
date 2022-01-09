@@ -1,3 +1,4 @@
+"""Module for converting text to list or dict of it's main words, that describes him"""
 from collections import OrderedDict
 import numpy as np
 import spacy
@@ -86,11 +87,12 @@ class TextRank4Keyword():
         return g_norm
 
     def get_keywords(self, number=10):
-        """Print top number keywords"""
+        """Returns list of most important words, which length isn't more then number"""
         node_weight = OrderedDict(sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
         return list(node_weight)[:min(number, len(node_weight))]
 
     def get_keywords_koe(self, number=10):
+        """Returns dict of most important words and it's coefficients, which length isn't more then number"""
         node_weight = OrderedDict(sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
         counter = 1
         word_koe = dict()
@@ -152,24 +154,14 @@ class TextRank4Keyword():
 
 
 def get_keywords(text):
+    """Returns list of keywords"""
     tr4w = TextRank4Keyword()
     tr4w.analyze(text, candidate_pos=['NOUN', 'PROPN'], window_size=4, lower=True)
     return tr4w.get_keywords(10)
 
 
 def get_keywords_koe(text):
+    """Returns dict, which keys are keywords and values are coefficients. Maximum coefficient is always equals 1"""
     tr4w = TextRank4Keyword()
     tr4w.analyze(text, candidate_pos=['NOUN', 'VERB'], window_size=4, lower=True)
     return tr4w.get_keywords_koe(10)
-
-
-# text = """Elon Musk: Tesla, SpaceX, and the Quest for a Fantastic Future
-#
-# In the spirit of Steve Jobs and Moneyball, Elon Musk is both an illuminating and authorized look at the extraordinary life of one of Silicon Valley's most exciting, unpredictable, and ambitious entrepreneurs - a real-life Tony Stark - and a fascinating exploration of the renewal of American invention and its new makers.
-#
-# Elon Musk spotlights the technology and vision of Elon Musk, the renowned entrepreneur and innovator behind SpaceX, Tesla, and SolarCity, who sold one of his Internet companies, PayPal, for $1.5 billion. Ashlee Vance captures the full spectacle and arc of the genius' life and work, from his tumultuous upbringing in South Africa and flight to the United States to his dramatic technical innovations and entrepreneurial pursuits.
-#
-# Vance uses Musk's story to explore one of the pressing questions of our age: Can the nation of inventors and creators who led the modern world for a century still compete in an age of fierce global competition? He argues that Musk - one of the most unusual and striking figures in American business history - is a contemporary, visionary amalgam of legendary inventors and industrialists, including Thomas Edison, Henry Ford, Howard Hughes, and Steve Jobs. More than any other entrepreneur today, Musk has dedicated his energies and his own vast fortune to inventing a future that is as rich and far reaching as the visionaries of the golden age of science-fiction fantasy."""
-#
-# for w, k in get_keywords_koe(text).items():
-#     print(w, ':', k)

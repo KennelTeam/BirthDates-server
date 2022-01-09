@@ -138,6 +138,7 @@ def calc_similarities_threaded(batch, user_text):
 
 
 def choose_gifts(information: str):
+    """Gets string with information about person and returns information about products in list of dicts"""
     print("choosing gift")
     # print("Write something about your friend:")
     # information = input('>>')
