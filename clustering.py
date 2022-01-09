@@ -28,7 +28,8 @@ def clusterize():
     for product in SessionManager().session().query(Product).all():
         products.append(product.to_json())
         words = nltk.word_tokenize(product.name + "\n" + product.description)
-        words = [word for word in words if word.isalpha() and word not in stopwords.words("english")]
+        words = [word for word in words if word.isalpha(
+        ) and word not in stopwords.words("english")]
         data.append(' '.join(words))
         print(data[-1])
     vectorizer = TfidfVectorizer(max_features=50)
@@ -46,7 +47,7 @@ def clusterize():
     print(result_data[1])
     # result_data = np.array(result_data)
     print(result_data.shape)
-     #print(result_data)
+    # print(result_data)
     db = KMeans(n_clusters=CLUSTERS, random_state=1).fit(result_data)
     # pca = PCA(n_features=2)
     # pca.fit(result_data)
@@ -69,13 +70,15 @@ def clusterize():
     for i in range(CLUSTERS):
         links[i] = []
         arr = db.cluster_centers_[i]
-        top = sorted(list(range(len(arr[:-3]))), key=lambda x: arr[x], reverse=True)
+        top = sorted(list(range(len(arr[:-3]))),
+                     key=lambda x: arr[x], reverse=True)
         keywords[i] = []
         for j in range(15):
             keywords[i].append((words[top[j]], arr[top[j]]))
         for j in range(len(products)):
             if db.labels_[j] == i:
-                links[i].append("https://amazon.com/dp/{}".format(products[j]["asin"][:-1]))
+                links[i].append(
+                    "https://amazon.com/dp/{}".format(products[j]["asin"][:-1]))
     pprint(links)
     pprint(keywords)
     return db.labels_
@@ -84,5 +87,3 @@ def clusterize():
 result = clusterize()
 counter = collections.Counter(list(result))
 print(counter)
-
-
