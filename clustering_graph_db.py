@@ -1,7 +1,12 @@
+# copyright KennelTeam
+# AndrusovN for any questions
+# File with database schema for clustering processes
 from images import Base
 from sqlalchemy import *
 
 
+# Table with cluster ids
+# All data about clusters is stored in other dbs. So Cluster has only ID
 class Cluster(Base):
     __tablename__ = "cluster"
 
@@ -13,6 +18,8 @@ class Cluster(Base):
             self.id = id
 
 
+# Relations between cluster and keywords
+# pairs of type cluster_id, keyword_id, weight which mean that cluster has keyword with weight
 class ClusterToKeyword(Base):
     __tablename__ = "cluster_to_keyword"
 
@@ -27,6 +34,7 @@ class ClusterToKeyword(Base):
         self.weight = weight
 
 
+# Cluster tree parent to child relation - list of pairs of parent clusters and child clusters
 class ClusterParentToChild(Base):
     __tablename__ = "cluster_parent_to_child"
 
@@ -39,6 +47,8 @@ class ClusterParentToChild(Base):
         self.child_id = children_id
 
 
+# Relations between clusters and their child products
+# Only leaf clusters have product childs
 class ClusterProductToCluster(Base):
     __tablename__ = "cluster_product_to_cluster"
 
