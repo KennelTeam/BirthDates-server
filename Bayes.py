@@ -13,7 +13,7 @@
 from compare_keywords import compare_word_lists, compare_word_list_precalced, prepare_calcs, load_calcs
 from keywords import get_keywords_koe
 from sklearn.naive_bayes import MultinomialNB
-from db_functions import get_product, get_all_products_keywords
+from db_functions import get_product, get_all_products_keywords, get_products
 import random
 import pickle
 import numpy as np
@@ -29,7 +29,7 @@ from nltk.corpus import wordnet as wn
 # Number of products to show after choosing
 K_PRODUCTS = 15
 # Presaved questions list. Pulled from DB on start, to save time later
-QUESTIONS = None
+QUESTIONS = get_all_questions()
 
 
 # Function to train Bayesian model on automatically generated data from product info
@@ -102,9 +102,12 @@ def train_nn(answers, products):
 def choose_gifts(user_answers):
     with open('Bayes_model_bytes.model', 'rb') as model_file:
         clf = pickle.loads(model_file.read())
-    ans = clf.predict_proba(user_answers)
-    product_ids = clf.classes_[np.flip(np.argsort(ans))][:K_PRODUCTS]
-    return [get_product(id) for id in product_ids]
+    ans = clf.predict_proba(np.array(user_answers).reshape(1, -1))
+    product_ids = clf.classes_[np.flip(np.argsort(ans))][:K_PRODUCTS][0]
+    print(product_ids)
+    print("products")
+    products = get_products(list(product_ids))
+    return [products[i] for i in product_ids]
 
 
 # class to communicate with bot and store user's game session

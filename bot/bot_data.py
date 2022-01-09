@@ -17,7 +17,7 @@ def get_bayes_session(user_id: int):
         new_user = User
         new_user.bayes_session = BayesSession()
         users[user_id] = new_user
-    elif users[user_id].bayes_session is None:
+    if users[user_id].bayes_session is None:
         users[user_id].bayes_session = BayesSession()
     return users[user_id].bayes_session
 
@@ -27,6 +27,6 @@ def get_tree_session(user_id: int):
         new_user = User
         new_user.tree_session = TreeSession()
         users[user_id] = new_user
-    elif users[user_id].tree_session is None:
+    if users[user_id].tree_session is None:
         users[user_id].tree_session = TreeSession()
     return users[user_id].tree_session
