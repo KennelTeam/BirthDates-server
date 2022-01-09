@@ -1,16 +1,16 @@
 import logging
 from aiogram import Bot, Dispatcher, executor, types
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import CallbackQuery
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher.filters.builtin import Text
-from pprint import pprint
 
 import users_db_functions
 import bot_data
 from compare_keywords import choose_gifts
 from states import States
 from config import get_token_from_dotenv
+import keyboards
 
 logging.basicConfig(level=logging.INFO)
 
@@ -40,30 +40,15 @@ def get_product_text(product: dict):
     return name + '\n' + link
 
 
-async def get_product_keyboard(user_id: int, product: dict):
-    product_keyboard = InlineKeyboardMarkup(row_width=2).add(
-        InlineKeyboardButton(text='Previous', callback_data='product_previous'),
-        InlineKeyboardButton(text='Next', callback_data='product_next'),
-    )
-    if product not in users_db_functions.get_users_favourite(user_id=user_id):
-        product_keyboard.add(InlineKeyboardButton(text='Add to liked', callback_data='product_like'))
-    else:
-        product_keyboard.add(InlineKeyboardButton(text='Remove form liked', callback_data='product_unlike'))
-    return product_keyboard
-
-
 async def show_products(user_id, products: list):
     product_index = 0
-
     if len(products) == 0:
         await bot.send_message(user_id, 'Your liked products is empty')
         return
-
     product = products[product_index]
-
     await bot.send_message(
         user_id, get_product_text(product),
-        reply_markup=await get_product_keyboard(user_id, products[product_index])
+        reply_markup=await keyboards.get_product_keyboard(user_id, products[product_index])
     )
 
     @dp.callback_query_handler(Text(startswith='product_'))
@@ -72,7 +57,7 @@ async def show_products(user_id, products: list):
         action = query.data.split('_')[1]
         if action == 'like':
             users_db_functions.add_to_favourite(user_id=user_id, product_id=int(product['id']))
-            await query.message.edit_reply_markup(reply_markup=await get_product_keyboard(user_id, product))
+            await query.message.edit_reply_markup(reply_markup=await keyboards.get_product_keyboard(user_id, product))
             await query.answer()
             return
         elif action == 'unlike':
@@ -81,7 +66,7 @@ async def show_products(user_id, products: list):
                 await bot.send_message(user_id, 'Your liked products is empty')
                 await query.answer()
                 return
-            await query.message.edit_reply_markup(reply_markup=await get_product_keyboard(user_id, product))
+            await query.message.edit_reply_markup(reply_markup=await keyboards.get_product_keyboard(user_id, product))
             await query.answer()
             return
         change_num = 1 if action == 'next' else -1
@@ -89,7 +74,7 @@ async def show_products(user_id, products: list):
             product_index += change_num
             await query.message.edit_text(
                 text=get_product_text(product),
-                reply_markup=await get_product_keyboard(user_id, product)
+                reply_markup=await keyboards.get_product_keyboard(user_id, product)
             )
         await query.answer()
 
@@ -104,33 +89,9 @@ async def compare_keywords_start(message: types.Message):
 @dp.message_handler(state=States.WAITING_KEYWORDS)
 async def compare_keywords_get_keywords(message: types.Message):
     products = choose_gifts(message.text)
-    # products = get_products()
     await show_products(message.from_user.id, products)
     state = dp.current_state(user=message.from_user.id)
     await state.reset_state()
-
-
-def get_keyboard(answers: list, is_multians=False):
-    multi = 'multi' if is_multians else ''
-    buttons = [
-        InlineKeyboardButton(text=answer, callback_data=f'{multi}ans_{index}')
-        for index, answer in enumerate(answers)
-    ]
-    if is_multians:
-        buttons += [InlineKeyboardButton(text='Confirm', callback_data='multians_confirm')]
-
-    kb = InlineKeyboardMarkup(row_width=1)
-    kb.add(*buttons)
-
-    return kb
-
-
-def get_scale_keyboard():
-    return InlineKeyboardMarkup().add(
-        InlineKeyboardButton(text='Yes', callback_data='scale_1'),
-        InlineKeyboardButton(text='Dont know', callback_data='scale_0.5'),
-        InlineKeyboardButton(text='No', callback_data='scale_0')
-    )
 
 
 def get_answers_by_query(callback_query: CallbackQuery):
@@ -139,12 +100,12 @@ def get_answers_by_query(callback_query: CallbackQuery):
 
 
 @dp.message_handler(commands=['start'])
-async def send_welcome(message: types.Message):
+async def start_command(message: types.Message):
     await message.reply('start message...')
 
 
 @dp.message_handler(commands=['help'])
-async def send_welcome(message: types.Message):
+async def help_command(message: types.Message):
     await set_default_commands()
     await message.reply('help message...')
 
@@ -159,7 +120,7 @@ async def callback_scale_ans(query: CallbackQuery):
         products = bayes_session.get_presents()
         print(products)
     question_text = question[0]
-    await query.message.answer(text=question_text, reply_markup=get_scale_keyboard())
+    await query.message.answer(text=question_text, reply_markup=keyboards.get_scale_keyboard())
     await query.answer()
 
 
@@ -180,7 +141,7 @@ async def callback_multians(query: CallbackQuery):
             return
         question = tree_session.get_question()
         print(question)
-        await query.message.answer('Select Keyword', reply_markup=get_keyboard(question, is_multians=True))
+        await query.message.answer('Select Keyword', reply_markup=keyboards.get_keyboard(question, is_multians=True))
         await query.answer()
         return
 
@@ -189,7 +150,7 @@ async def callback_multians(query: CallbackQuery):
         answers_list[ans_index] += ' ' + check_mark_emoji
     else:
         answers_list[ans_index] = answers_list[ans_index].replace(' ' + check_mark_emoji, '')
-    await query.message.edit_reply_markup(get_keyboard(answers_list, is_multians=True))
+    await query.message.edit_reply_markup(keyboards.get_keyboard(answers_list, is_multians=True))
     await query.answer()
 
 
@@ -198,7 +159,7 @@ async def tree_algorithm_start(message: types.Message):
     tree_session = bot_data.get_tree_session(message.from_user.id)
     question = tree_session.get_question()
     await message.answer('Start "Tree" algorithm')
-    await message.answer('Select Keyword', reply_markup=get_keyboard(question, is_multians=True))
+    await message.answer('Select Keyword', reply_markup=keyboards.get_keyboard(question, is_multians=True))
 
 
 @dp.message_handler(commands=['bayes'])
@@ -207,7 +168,7 @@ async def bayes_algorithm_start(message: types.Message):
     question = bayes_session.get_question()
     await message.answer('Start "Bayes" algorithm')
     question_text = question[0]
-    await message.answer(text=question_text, reply_markup=get_scale_keyboard())
+    await message.answer(text=question_text, reply_markup=keyboards.get_scale_keyboard())
 
 
 @dp.message_handler(commands=['liked'])
