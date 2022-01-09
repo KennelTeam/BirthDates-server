@@ -8,7 +8,6 @@ from pprint import pprint
 
 import users_db_functions
 import bot_data
-from consts import Messages
 from compare_keywords import choose_gifts
 from states import States
 from config import get_token_from_dotenv
@@ -29,15 +28,16 @@ async def set_default_commands():
         types.BotCommand('help', 'Get Help'),
         types.BotCommand('compare_keywords', 'Compare keywords algorithm'),
         types.BotCommand('tree_algorithm', 'Tree algorithm'),
-        types.BotCommand('liked', 'Your liked products')
+        types.BotCommand('liked', 'Your liked products'),
+        types.BotCommand('bayes', 'Bayes Algorithm')
     ])
 
 
 def get_product_text(product: dict):
-    ...
-    # name = product['name']
-    # link = product['link']
-    # return name + '\n' + link
+    print(product)
+    name = product['name']
+    link = product['link']
+    return name + '\n' + link
 
 
 async def get_product_keyboard(user_id: int, product: dict):
@@ -59,15 +59,16 @@ async def show_products(user_id, products: list):
         await bot.send_message(user_id, 'Your liked products is empty')
         return
 
+    product = products[product_index]
+
     await bot.send_message(
-        user_id, str(products[product_index]),
+        user_id, get_product_text(product),
         reply_markup=await get_product_keyboard(user_id, products[product_index])
     )
 
     @dp.callback_query_handler(Text(startswith='product_'))
     async def product_actions_handler(query: CallbackQuery):
         nonlocal product_index
-        product = products[product_index]
         action = query.data.split('_')[1]
         if action == 'like':
             users_db_functions.add_to_favourite(user_id=user_id, product_id=int(product['id']))
@@ -87,7 +88,7 @@ async def show_products(user_id, products: list):
         if 0 <= product_index + change_num < len(products):
             product_index += change_num
             await query.message.edit_text(
-                text=str(products[product_index]),
+                text=get_product_text(product),
                 reply_markup=await get_product_keyboard(user_id, product)
             )
         await query.answer()
@@ -124,6 +125,14 @@ def get_keyboard(answers: list, is_multians=False):
     return kb
 
 
+def get_scale_keyboard():
+    return InlineKeyboardMarkup().add(
+        InlineKeyboardButton(text='Yes', callback_data='scale_1'),
+        InlineKeyboardButton(text='Dont know', callback_data='scale_0.5'),
+        InlineKeyboardButton(text='No', callback_data='scale_0')
+    )
+
+
 def get_answers_by_query(callback_query: CallbackQuery):
     for i in callback_query.message.reply_markup:
         return [j[0]['text'] for j in i[1]]
@@ -140,11 +149,17 @@ async def send_welcome(message: types.Message):
     await message.reply('help message...')
 
 
-@dp.callback_query_handler(Text(startswith='ans_'))
-async def callback_ans(query: CallbackQuery):
-    ans_index = int(query.data.split('_')[1])
-    # await query.message.edit_reply_markup(None)
-    await bot.send_message(query.from_user.id, str(ans_index))
+@dp.callback_query_handler(Text(startswith='scale_'))
+async def callback_scale_ans(query: CallbackQuery):
+    ans_coefficient = float(query.data.split('_')[1])
+    bayes_session = bot_data.get_bayes_session(query.from_user.id)
+    bayes_session.new_answer(ans_coefficient)
+    question = bayes_session.get_question()
+    if question is None:
+        products = bayes_session.get_presents()
+        print(products)
+    question_text = question[0]
+    await query.message.answer(text=question_text, reply_markup=get_scale_keyboard())
     await query.answer()
 
 
@@ -157,8 +172,6 @@ async def callback_multians(query: CallbackQuery):
         for answer in answers_list:
             if check_mark_emoji in answer:
                 selected_answers.append(answer.replace(' ' + check_mark_emoji, ''))
-        # await query.message.edit_reply_markup(None)
-        # await bot.send_message(query.from_user.id, str(selected_indexes))
         tree_session = bot_data.get_tree_session(query.from_user.id)
         products = tree_session.new_answer(selected_answers)
         if len(products) > 0:
@@ -186,6 +199,15 @@ async def tree_algorithm_start(message: types.Message):
     question = tree_session.get_question()
     await message.answer('Start "Tree" algorithm')
     await message.answer('Select Keyword', reply_markup=get_keyboard(question, is_multians=True))
+
+
+@dp.message_handler(commands=['bayes'])
+async def bayes_algorithm_start(message: types.Message):
+    bayes_session = bot_data.get_bayes_session(message.from_user.id)
+    question = bayes_session.get_question()
+    await message.answer('Start "Bayes" algorithm')
+    question_text = question[0]
+    await message.answer(text=question_text, reply_markup=get_scale_keyboard())
 
 
 @dp.message_handler(commands=['liked'])
