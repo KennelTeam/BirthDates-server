@@ -1,5 +1,5 @@
 
-with open('Bayes_model.model', 'r') as fi:
+with open('Bayes_model-string.model', 'r') as fi:
     data = fi.read()
 
 data = data[2:-2]
@@ -19,5 +19,5 @@ while i < len(data):
 
 b_data = bytes(new_data, 'utf-8')
 
-with open('Bayes_model_bytes.model', 'wb') as fo:
+with open('Bayes_model.model', 'wb') as fo:
     fo.write(b_data)

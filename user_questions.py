@@ -1,9 +1,18 @@
+# copyright  KennelTeam
+# AndrusovN for any questions
+# File with realizations of clustering-tree product recommendation algorithm
+# Products are stored in a clustering-tree, each cluster has it's own keywords
+# User is asked to choose keywords about their friend
+# By answering these questions user is going down by the tree
+# When user comes out in a leaf cluster, we show him gifts from this cluster
+# Clusterization part of algorithm is realized in clustering.py
 import statistics
 from clustering_graph_db_functions import get_root_clusters, get_child_clusters, get_cluster_products
 from db_functions import get_product, get_products
 from pprint import pprint
 
 
+# Determine keywords to show to user by given lists of keywords in clusters
 def words_to_ask(clusters_list):
     words_weight = dict()
     for cl_idx, (cl_id, cl) in enumerate(clusters_list):
@@ -24,6 +33,7 @@ def words_to_ask(clusters_list):
     return words
 
 
+# Choose cluster by user's chosen keywords
 def choose_cluster(choosed_words, cluster_list):
     # print(choosed_words)
 
