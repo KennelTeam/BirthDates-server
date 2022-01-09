@@ -163,6 +163,7 @@ def calc_similarities_threaded(batch, user_text):
 # it parses keywords from description and checks similarity of those keywords to keywords of other
 # product clusters. Finds the nearest cluster and returns it
 def choose_gifts(information: str):
+    """Gets string with information about person and returns information about products in list of dicts"""
     print("choosing gift")
     user_keywords = get_keywords_koe(information)
     max_similarity = 0
