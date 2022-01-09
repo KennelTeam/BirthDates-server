@@ -92,13 +92,13 @@ def train_nn(answers, products):
     clf = MultinomialNB()
     clf.fit(answers, products)
     data = pickle.dumps(clf)
-    with open('Bayes_model.model', 'w') as model_file:
+    with open('Bayes_model_bytes.model', 'wb') as model_file:
         print(data, file=model_file)
 
 
 # function to choose gifts based on user's answers
 def choose_gifts(user_answers):
-    with open('Bayes_model.model', 'r') as model_file:
+    with open('Bayes_model_bytes.model', 'rb') as model_file:
         clf = pickle.loads(model_file.read())
     ans = clf.predict_proba(user_answers)
     product_ids = clf.classes_[np.flip(np.argsort(ans))][:K_PRODUCTS]
@@ -113,6 +113,7 @@ class BayesSession:
         # the queue of ids of unanswered questions (shuffled)
         self.unanswered_ids = list(range(len(QUESTIONS)))
         # id of last asked question
+        print(self.unanswered_ids)
         self.last_q_id = None
         random.shuffle(self.unanswered_ids)
 
@@ -122,6 +123,9 @@ class BayesSession:
 
     # getting the next question
     def get_question(self):
+        print("get question")
+        if len(self.unanswered_ids) == 0:
+            return None
         self.last_q_id = self.unanswered_ids.pop()
         return QUESTIONS[self.last_q_id]
 
