@@ -1,4 +1,8 @@
 from nltk.corpus import wordnet as wn
+from questions_db_functions import add_question
+from tqdm import tqdm
+from SessionManager import SessionManager
+
 
 def load_questions():
     with open('questions.txt') as f:
@@ -16,4 +20,10 @@ def load_questions():
             'question': question,
             'keywords': keywords})
 
-    return res
+    for item in tqdm(res):
+        add_question(item['question'], item['keywords'])
+
+    SessionManager().session().commit()
+
+
+load_questions()

@@ -40,13 +40,15 @@ def prepare_initials():
     keyword_id = max(all_keywords.values()) + 1
 
 
+def prepare_data_json():
+    return json.loads(open('product_keywords.json', 'r').read())
+
+
 def prepare_data():
-    global all_keywords, keyword_id
     total = SessionManager().session().query(Product).all()
     keywords = {}
     for product in tqdm(total):
         cur_keywords = db_functions.get_product_keywords(product.id)
-
         keywords[product.id] = cur_keywords
     return keywords
 
@@ -139,7 +141,10 @@ def generalize_item_v3(keywords: dict):
     for k, word in keywords_sorted:
         synset_w = wn.synsets(word)[0]
         for synset in new_synsets:
-            sim = synset_w.lch_similarity(synset)
+            try:
+                sim = synset_w.wup_similarity(synset)
+            except Exception:
+                sim = 0
             if sim is None:
                 sim = 0
             new_synsets[synset] += k * sim**2
@@ -346,11 +351,11 @@ def make_clustering_predata(steps: int, initial_data):
                 'product_ids': product_ids
              }
         ))
+    clear_db()
     save_all(steps, cluster_words, cluster_children, product_ids)
 
 
 def make_clustering(steps: int):
-    clear_db()
     prepare_initials()
-    initial_data = prepare_data()
+    initial_data = prepare_data_json()
     make_clustering_predata(steps, initial_data)
