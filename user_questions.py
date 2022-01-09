@@ -1,5 +1,5 @@
 # copyright  KennelTeam
-# AndrusovN for any questions
+# Yveega & AndrusovN for any questions
 # File with realizations of clustering-tree product recommendation algorithm
 # Products are stored in a clustering-tree, each cluster has it's own keywords
 # User is asked to choose keywords about their friend
@@ -35,8 +35,6 @@ def words_to_ask(clusters_list):
 
 # Choose cluster by user's chosen keywords
 def choose_cluster(choosed_words, cluster_list):
-    # print(choosed_words)
-
     cluster_points = [0] * len(cluster_list)
     for idx, (cl_idx, cl) in enumerate(cluster_list):
         for word in choosed_words:

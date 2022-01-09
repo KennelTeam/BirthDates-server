@@ -10,7 +10,7 @@
 # Then save it to Bayes-model.model file and use
 # It is planned to add training based on user's answers
 
-from compare_keywords import compare_word_lists, compare_word_list_precalced, prepare_calcs
+from compare_keywords import compare_word_lists, compare_word_list_precalced, prepare_calcs, load_calcs
 from keywords import get_keywords_koe
 from sklearn.naive_bayes import MultinomialNB
 from db_functions import get_product, get_all_products_keywords
@@ -37,7 +37,9 @@ def train_all():
     # The first step is to precalculate synset.wup_similarities for each pair of keywords from question and
     # from product. This step is needed to speed up computations
     print("precalcing synsets")
-    prepare_calcs()
+    # prepare_calcs()
+    # or load precalcs from json
+    load_calcs()
     # The second step is pulling all questions from DataBase
     print("getting all questions")
     global QUESTIONS
@@ -93,7 +95,7 @@ def train_nn(answers, products):
     clf.fit(answers, products)
     data = pickle.dumps(clf)
     with open('Bayes_model_bytes.model', 'wb') as model_file:
-        print(data, file=model_file)
+        model_file.write(data)
 
 
 # function to choose gifts based on user's answers

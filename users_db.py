@@ -1,3 +1,6 @@
+# copyright KennelTeam
+# AndrusovN for any questions
+# File with database shema of users part of DB
 from images import Base
 from sqlalchemy import *
 
@@ -11,6 +14,7 @@ class User(Base):
         self.telegram_id = telegram_id
 
 
+# Favourite products of users relational table
 class Favourite(Base):
     __tablename__ = "favourite"
 
