@@ -11,6 +11,8 @@ prods = []  # [[id, prod], [id, prod]...]
 pairs = []  # [[id, pair], [id, pair]...]
 
 
+# LEGACY !!!!
+# Adds product to database (quite slow function)
 def add_product(amazon_id: str, cost_cents: int, name: str, description: str, reviews_count: int, avg_rating: float,
                 keyw_inp: list, path: str):
     global id_keyword, id_pair, id_prod

@@ -2,6 +2,10 @@ from collections import OrderedDict
 import numpy as np
 import spacy
 from spacy.lang.en.stop_words import STOP_WORDS
+# import nltk
+from nltk.corpus import wordnet as wn
+
+# nltk.download('wordnet')
 
 nlp = spacy.load('en_core_web_sm')
 
@@ -77,14 +81,35 @@ class TextRank4Keyword():
 
         # Normalize matrix by column
         norm = np.sum(g, axis=0)
-        g_norm = np.divide(g, norm, where=norm != 0)  # this is ignore the 0 element in norm
+        # this is ignore the 0 element in norm
+        g_norm = np.divide(g, norm, where=norm != 0)
 
         return g_norm
 
     def get_keywords(self, number=10):
         """Print top number keywords"""
-        node_weight = OrderedDict(sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
+        node_weight = OrderedDict(
+            sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
         return list(node_weight)[:min(number, len(node_weight))]
+
+    def get_keywords_koe(self, number=10):
+        node_weight = OrderedDict(
+            sorted(self.node_weight.items(), key=lambda t: t[1], reverse=True))
+        counter = 1
+        word_koe = dict()
+        keywords = list(node_weight.items())
+        if len(keywords) == 0:
+            return dict()
+        max_k = keywords[0][1]
+        for word, k in node_weight.items():
+            if len(wn.synsets(word)) == 0:
+                # print(word)
+                continue
+            word_koe[word] = k / max_k
+            if counter == number:
+                break
+            counter += 1
+        return word_koe
 
     def analyze(self, text,
                 candidate_pos=['NOUN', 'PROPN'],
@@ -98,7 +123,8 @@ class TextRank4Keyword():
         doc = nlp(text)
 
         # Filter sentences
-        sentences = self.sentence_segment(doc, candidate_pos, lower)  # list of list of words
+        sentences = self.sentence_segment(
+            doc, candidate_pos, lower)  # list of list of words
 
         # Build vocabulary
         vocab = self.get_vocab(sentences)
@@ -131,6 +157,25 @@ class TextRank4Keyword():
 
 def get_keywords(text):
     tr4w = TextRank4Keyword()
-    tr4w.analyze(text, candidate_pos=['NOUN', 'PROPN'], window_size=4, lower=True)
+    tr4w.analyze(text, candidate_pos=[
+                 'NOUN', 'PROPN'], window_size=4, lower=True)
     return tr4w.get_keywords(10)
 
+
+def get_keywords_koe(text):
+    tr4w = TextRank4Keyword()
+    tr4w.analyze(text, candidate_pos=[
+                 'NOUN', 'VERB'], window_size=4, lower=True)
+    return tr4w.get_keywords_koe(10)
+
+
+# text = """Elon Musk: Tesla, SpaceX, and the Quest for a Fantastic Future
+#
+# In the spirit of Steve Jobs and Moneyball, Elon Musk is both an illuminating and authorized look at the extraordinary life of one of Silicon Valley's most exciting, unpredictable, and ambitious entrepreneurs - a real-life Tony Stark - and a fascinating exploration of the renewal of American invention and its new makers.
+#
+# Elon Musk spotlights the technology and vision of Elon Musk, the renowned entrepreneur and innovator behind SpaceX, Tesla, and SolarCity, who sold one of his Internet companies, PayPal, for $1.5 billion. Ashlee Vance captures the full spectacle and arc of the genius' life and work, from his tumultuous upbringing in South Africa and flight to the United States to his dramatic technical innovations and entrepreneurial pursuits.
+#
+# Vance uses Musk's story to explore one of the pressing questions of our age: Can the nation of inventors and creators who led the modern world for a century still compete in an age of fierce global competition? He argues that Musk - one of the most unusual and striking figures in American business history - is a contemporary, visionary amalgam of legendary inventors and industrialists, including Thomas Edison, Henry Ford, Howard Hughes, and Steve Jobs. More than any other entrepreneur today, Musk has dedicated his energies and his own vast fortune to inventing a future that is as rich and far reaching as the visionaries of the golden age of science-fiction fantasy."""
+#
+# for w, k in get_keywords_koe(text).items():
+#     print(w, ':', k)

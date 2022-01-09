@@ -3,7 +3,13 @@ venv/
 .env
 __pycache__/
 test.*
+<<<<<<< HEAD
 
 *.json
 *.html
+=======
+*.json
+*.html
+*.model
+>>>>>>> 53c757176e339bc12a6f6591f4149cf6362a9c49
 *.txt
