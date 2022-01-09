@@ -139,10 +139,10 @@ def generalize_item_v3(keywords: dict):
     for k, word in keywords_sorted:
         synset_w = wn.synsets(word)[0]
         for synset in new_synsets:
-            sim = synset_w.path_similarity(synset)
+            sim = synset_w.lch_similarity(synset)
             if sim is None:
                 sim = 0
-            new_synsets[synset] += k * sim
+            new_synsets[synset] += k * sim**2
 
     for synset in new_synsets:
         new_synsets[synset] /= k_main
@@ -351,5 +351,6 @@ def make_clustering_predata(steps: int, initial_data):
 
 def make_clustering(steps: int):
     clear_db()
+    prepare_initials()
     initial_data = prepare_data()
     make_clustering_predata(steps, initial_data)
