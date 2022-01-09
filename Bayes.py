@@ -43,7 +43,7 @@ def choose_gifts(user_answers):
     return [get_product(id) for id in product_ids]
 
 
-class Session:
+class BayesSession:
     def __init__(self):
         self.answers = [0.5] * len(QUESTIONS)
         self.unanswered_ids = list(range(len(QUESTIONS)))
