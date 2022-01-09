@@ -1,6 +1,6 @@
 import statistics
 from clustering_graph_db_functions import get_root_clusters, get_child_clusters, get_cluster_products
-from db_functions import get_product
+from db_functions import get_product, get_products
 
 
 def words_to_ask(clusters_list):
@@ -53,7 +53,7 @@ class TreeSession:
         self.clusters = get_child_clusters(new_cluster_id)
         if len(self.clusters) == 0:
             product_ids = get_cluster_products(new_cluster_id)
-            self.products = [get_product(pr_id) for pr_id in product_ids]
+            self.products = get_products(product_ids).values()
         else:
             self.words = words_to_ask(self.clusters)
         return self.products
