@@ -1,9 +1,15 @@
+import concurrent
+
 import nltk
 from nltk.corpus import wordnet as wn
 from keywords import get_keywords_koe
 from clustering_graph_db_functions import get_leaf_clusters, get_cluster_products  # commented for testing
-from db_functions import get_product_keywords, get_product  # commented for testing
+from db_functions import get_product_keywords, get_product, get_products_keywords, get_products  # commented for testing
 from tqdm import tqdm
+import concurrent.futures
+from pprint import pprint
+from threading import Lock
+synset_lock = Lock()
 
 nltk.download('wordnet')
 
@@ -125,26 +131,72 @@ nltk.download('wordnet')
 
 ###########################################
 
+
+MAX_THREADS_COUNT = 10
+
+
 def compare_word_lists(word_weights1, word_weights2):
+    return compare_word_lists_threaded(word_weights1, word_weights2, 0, 0)[0]
+
+
+def compare_word_lists_threaded(word_weights1, word_weights2, index, id):
+    # wn.ensure_loaded()
     synsets1 = []
+    # print("1")
+
     for word, k in word_weights1.items():
-        if len(wn.synsets(word)) == 0:
+        synset_lock.acquire()
+        synsets = wn.synsets(word)
+        synset_lock.release()
+        if len(synsets) == 0:
             print(word)
-        synsets1.append((wn.synsets(word)[0], k))
+        synsets1.append((synsets[0], k))
     synsets2 = []
+    # print("2")
     for word, k in word_weights2.items():
-        if len(wn.synsets(word)) == 0:
+        synset_lock.acquire()
+        synsets = wn.synsets(word)
+        synset_lock.release()
+        if len(synsets) == 0:
             print(word)
-        synsets2.append((wn.synsets(word)[0], k))
+        # print("finished " + word)
+        synsets2.append((synsets[0], k))
+    # print("3")
     similarity = 0
     for syn1, k1 in synsets1:
         for syn2, k2 in synsets2:
+            synset_lock.acquire()
             sim = syn1.path_similarity(syn2)
+            synset_lock.release()
             if sim is None:
                 sim = 0
             similarity += sim * k1 * k2
+    # print("4")
     similarity /= len(word_weights1) * len(word_weights2)
-    return similarity
+    return similarity, index, id
+
+
+def calc_similarities(batch, user_text):
+    out = [None] * len(batch)
+    for index, item in enumerate(batch):
+        out[index] = item[0], compare_word_lists(user_text, item[1])
+    return out
+
+
+def calc_similarities_threaded(batch, user_text):
+    out = [None] * len(batch)
+    # for item in batch:
+    #     pprint(item)
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=len(batch)) as executor:
+        future_to_similarity = (executor.submit(compare_word_lists_threaded, user_text, batch[i][1], i, batch[i][0])
+                                for i in range(len(batch)))
+        for future in concurrent.futures.as_completed(future_to_similarity):
+            similarity_and_index = future.result()
+            if similarity_and_index:
+                similarity, index, id = similarity_and_index
+                out[index] = id, similarity
+    return out
 
 
 def choose_gifts(information: str):
@@ -160,21 +212,23 @@ def choose_gifts(information: str):
     max_similarity = 0
     max_cluster_id = -1
     print("getting clusters")
-    clusters = get_leaf_clusters()
+    clusters = list(get_leaf_clusters())
     print("clusters received")
-    for cluster_id, cluster_keywords in clusters:
-        # print("Cluster keywords", cluster_keywords)
-        if len(cluster_keywords) == 0:
-            continue
-        similarity = compare_word_lists(user_keywords, cluster_keywords)
-        if similarity > max_similarity:
-            max_similarity = similarity
-            max_cluster_id = cluster_id
+    similarities = []
+    for i in tqdm(range(len(clusters) // MAX_THREADS_COUNT)):
+        begin_index, end_index = i * MAX_THREADS_COUNT, min(len(clusters), (i + 1)*MAX_THREADS_COUNT)
+        current_batch = clusters[begin_index:end_index]
+        # similarities += calc_similarities_threaded(current_batch, user_keywords)
+        similarities += calc_similarities(current_batch, user_keywords)
+
+    max_cluster_id = max(similarities, key=lambda x: x[1])[0]
+
     print("getting products")
     product_ids = get_cluster_products(max_cluster_id)
     products_list = []
-    for product_id in tqdm(product_ids):
-        product_keywords = get_product_keywords(product_id)
+    products_keywords = get_products_keywords(product_ids)
+    for product_id in product_ids:
+        product_keywords = products_keywords[product_id]
         if len(product_keywords) == 0:
             continue
         # print("Product keywords", product_keywords)
@@ -182,7 +236,8 @@ def choose_gifts(information: str):
         products_list.append((similarity, product_id))
     products_list.sort(reverse=True)
     print("preparing answers")
-    return [get_product(product[1]) for product in products_list]
+    products = get_products(product_ids)
+    return [products[p[1]] for p in products_list]
     # for _, product_id in products_list:
     #     print(get_product(product_id))
 
