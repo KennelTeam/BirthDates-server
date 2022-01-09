@@ -1,11 +1,11 @@
-# copyright  KennelTeam
-# Yveega & AndrusovN for any questions
-# File with realizations of clustering-tree product recommendation algorithm
-# Products are stored in a clustering-tree, each cluster has it's own keywords
-# User is asked to choose keywords about their friend
-# By answering these questions user is going down by the tree
-# When user comes out in a leaf cluster, we show him gifts from this cluster
-# Clusterization part of algorithm is realized in clustering.py
+"""copyright  KennelTeam
+Yveega & AndrusovN for any questions
+File with realizations of clustering-tree product recommendation algorithm
+Products are stored in a clustering-tree, each cluster has it's own keywords
+User is asked to choose keywords about their friend
+By answering these questions user is going down by the tree
+When user comes out in a leaf cluster, we show him gifts from this cluster
+Clusterization part of algorithm is realized in clustering.py"""
 import statistics
 from clustering_graph_db_functions import get_root_clusters, get_child_clusters, get_cluster_products
 from db_functions import get_product, get_products
@@ -14,6 +14,8 @@ from pprint import pprint
 
 # Determine keywords to show to user by given lists of keywords in clusters
 def words_to_ask(clusters_list):
+    """Gets list of tuples of cluster id and dict of cluster keywords and it's coefficients
+    Returns words, that most important to ask"""
     words_weight = dict()
     for cl_idx, (cl_id, cl) in enumerate(clusters_list):
         for word, weight in cl.items():
@@ -33,8 +35,9 @@ def words_to_ask(clusters_list):
     return words
 
 
-# Choose cluster by user's chosen keywords
 def choose_cluster(choosed_words, cluster_list):
+    """Gets list of words, that was choosed by user and list of clusters in the same format that words_to_ask() gets
+    Returns id of cluster that choosed user, basing on words, that he choose"""
     cluster_points = [0] * len(cluster_list)
     for idx, (cl_idx, cl) in enumerate(cluster_list):
         for word in choosed_words:
@@ -55,12 +58,15 @@ def user_choose(clusters_list):
 
 
 class TreeSession:
+    """Class for interaction between bot and algorithm functions"""
     def __init__(self):
         self.clusters = get_root_clusters()
         self.words = words_to_ask(self.clusters)
         self.products = []
 
     def new_answer(self, answers):
+        """Gets list of words that choosed user
+        Returns list of products if user has replied enough questions and [] if he hasn't"""
         pprint(self.clusters)
         new_cluster_id = self.clusters[choose_cluster(
             answers, self.clusters)][0]
@@ -80,4 +86,5 @@ class TreeSession:
         return self.products
 
     def get_question(self):
+        """Returns list of words needed to ask"""
         return self.words

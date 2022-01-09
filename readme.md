@@ -1,8 +1,21 @@
 # BirthDates project
+### This is BirthDates projects. It is a telegram chat-bot, which helps to choose gifts for your friends
 
-This is a BirthDates project client side.
-BirthDates is an app to help people in
-choosing gifts for their friends
+## Key features of project:
+- **Amazon parsing** - This project has database with over `20 000` 
+products from amazon gifts section. Products are scrapped with captcha-solving
+- **Clustering-tree recommendation algorithm** - This project has 3 modes of recommendation
+The first mode is clustering-tree based mode. The products are stored in clustering-tree,
+user is going from root to leaft by answering questions. When user reaches leaf cluster, 
+they get the list of recommended products
+- **Keywords analysis recommendation algorithm** - This project has keywords analysis algorithm.
+User writes a short description about their friend and by analyzing keywords and their meaning
+similarity to keywords of clusters recommends products
+- **Bayesian-Gauss recommendation algorithm** - This project has Bayesian-Gauss recommendation
+algorithm - each product has a normal distribution of probability of being recommended in
+space of questions' answers. User is moving through this space by answering questions.
+The recommended gifts are those with the most probability value in current users's
+position
 
 ## This repo has some useful scripts for parsing amazon.com
 

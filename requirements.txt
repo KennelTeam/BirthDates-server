@@ -9,3 +9,7 @@ spacy~=3.2.1
 aiogram~=2.16
 numpy~=1.19.5
 urllib3~=1.25.8
+
+googletrans~=3.1.0a0
+nltk~=3.6.7
+scikit-learn~=1.0.2

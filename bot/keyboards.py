@@ -23,7 +23,9 @@ async def get_product_keyboard(user_id: int, product: dict):
         InlineKeyboardButton(text='Previous', callback_data='product_previous'),
         InlineKeyboardButton(text='Next', callback_data='product_next'),
     )
-    if product not in users_db_functions.get_users_favourite(user_id=user_id):
+    favourites = users_db_functions.get_users_favourite(user_id=user_id)
+    print('favourites', favourites)
+    if product not in favourites:
         product_keyboard.add(InlineKeyboardButton(text='Add to liked', callback_data='product_like'))
     else:
         product_keyboard.add(InlineKeyboardButton(text='Remove form liked', callback_data='product_unlike'))
@@ -31,8 +33,10 @@ async def get_product_keyboard(user_id: int, product: dict):
 
 
 def get_scale_keyboard():
-    return InlineKeyboardMarkup().add(
+    return InlineKeyboardMarkup(row_width=3).add(
         InlineKeyboardButton(text='Yes', callback_data='scale_1'),
         InlineKeyboardButton(text='Dont know', callback_data='scale_0.5'),
         InlineKeyboardButton(text='No', callback_data='scale_0')
+    ).add(
+        InlineKeyboardButton(text='Get products', callback_data='scale_getproducts')
     )

@@ -1,9 +1,11 @@
 import logging
+
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import CallbackQuery
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.dispatcher.filters.builtin import Text
+from aiogram.utils.exceptions import MessageNotModified
 
 import users_db_functions
 import bot_data
@@ -12,6 +14,7 @@ from states import States
 from config import get_token_from_dotenv
 import keyboards
 from consts import Commands, Messages, Emojis
+from translator import translate_to_russian
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,7 +36,6 @@ async def set_default_commands():
 
 
 def get_product_text(product: dict):
-    print(product)
     name = product['name']
     link = product['link']
     return name + '\n' + link
@@ -42,11 +44,11 @@ def get_product_text(product: dict):
 async def show_products(user_id, products: list):
     product_index = 0
     if len(products) == 0:
-        await bot.send_message(user_id, Messages.LIKED_EMPTY_MESSAGE)
+        await bot.send_message(user_id, translate_to_russian(Messages.LIKED_EMPTY_MESSAGE))
         return
     product = products[product_index]
     await bot.send_message(
-        user_id, get_product_text(product),
+        user_id, translate_to_russian(get_product_text(product)),
         reply_markup=await keyboards.get_product_keyboard(user_id, products[product_index])
     )
 
@@ -61,20 +63,23 @@ async def show_products(user_id, products: list):
             return
         elif action == 'unlike':
             users_db_functions.remove_from_favourite(user_id=user_id, product_id=int(product['id']))
+            await query.message.edit_reply_markup(reply_markup=await keyboards.get_product_keyboard(user_id, product))
             if len(products) == 0:
-                await bot.send_message(user_id, Messages.LIKED_EMPTY_MESSAGE)
+                await bot.send_message(user_id, translate_to_russian(Messages.LIKED_EMPTY_MESSAGE))
                 await query.answer()
                 return
-            await query.message.edit_reply_markup(reply_markup=await keyboards.get_product_keyboard(user_id, product))
             await query.answer()
             return
         change_num = 1 if action == 'next' else -1
         if 0 <= product_index + change_num < len(products):
             product_index += change_num
-            await query.message.edit_text(
-                text=get_product_text(product),
-                reply_markup=await keyboards.get_product_keyboard(user_id, product)
-            )
+            try:
+                await query.message.edit_text(
+                    text=translate_to_russian(get_product_text(products[product_index])),
+                    reply_markup=await keyboards.get_product_keyboard(user_id, products[product_index])
+                )
+            except MessageNotModified:
+                pass
         await query.answer()
 
 
@@ -82,7 +87,7 @@ async def show_products(user_id, products: list):
 async def compare_keywords_start(message: types.Message):
     state = dp.current_state(user=message.from_user.id)
     await state.set_state(States.WAITING_KEYWORDS[0])
-    await message.answer(Messages.START_KEYWORDS_ALGORITHM_MESSAGE)
+    await message.answer(translate_to_russian(Messages.START_KEYWORDS_ALGORITHM_MESSAGE))
 
 
 @dp.message_handler(state=States.WAITING_KEYWORDS)
@@ -100,26 +105,35 @@ def get_answers_by_query(callback_query: CallbackQuery):
 
 @dp.message_handler(commands=['start'])
 async def start_command(message: types.Message):
-    await message.reply(Messages.START_MESSAGE)
+    await message.reply(translate_to_russian(Messages.START_MESSAGE))
 
 
 @dp.message_handler(commands=['help'])
 async def help_command(message: types.Message):
     await set_default_commands()
-    await message.reply(Messages.HELP_MESSAGE)
+    await message.reply(translate_to_russian(Messages.HELP_MESSAGE))
 
 
 @dp.callback_query_handler(Text(startswith='scale_'))
 async def callback_scale_ans(query: CallbackQuery):
-    ans_coefficient = float(query.data.split('_')[1])
     bayes_session = bot_data.get_bayes_session(query.from_user.id)
+    user_id = query.from_user.id
+    action = query.data.split('_')[1]
+    if action == 'getproducts':
+        products = bayes_session.get_presents()
+        await show_products(user_id=user_id, products=products)
+        await query.answer()
+        return
+    ans_coefficient = float(action)
     bayes_session.new_answer(ans_coefficient)
     question = bayes_session.get_question()
     if question is None:
         products = bayes_session.get_presents()
-        print(products)
-    question_text = question[0]
-    await query.message.answer(text=question_text, reply_markup=keyboards.get_scale_keyboard())
+        await show_products(user_id=user_id, products=products)
+        await query.answer()
+        return
+    question_text = question['text']
+    await query.message.answer(text=translate_to_russian(question_text), reply_markup=keyboards.get_scale_keyboard())
     await query.answer()
 
 
@@ -139,8 +153,7 @@ async def callback_multians(query: CallbackQuery):
             await query.answer()
             return
         question = tree_session.get_question()
-        print(question)
-        await query.message.answer(Messages.SELECT_KEYWORDS_MESSAGE, reply_markup=keyboards.get_keyboard(question, is_multians=True))
+        await query.message.answer(translate_to_russian(Messages.SELECT_KEYWORDS_MESSAGE), reply_markup=keyboards.get_keyboard(question, is_multians=True))
         await query.answer()
         return
 
@@ -157,17 +170,17 @@ async def callback_multians(query: CallbackQuery):
 async def tree_algorithm_start(message: types.Message):
     tree_session = bot_data.get_tree_session(message.from_user.id)
     question = tree_session.get_question()
-    await message.answer(Messages.START_TREE_ALGORITHM)
-    await message.answer(Messages.SELECT_KEYWORDS_MESSAGE, reply_markup=keyboards.get_keyboard(question, is_multians=True))
+    await message.answer(translate_to_russian(Messages.START_TREE_ALGORITHM))
+    await message.answer(translate_to_russian(Messages.SELECT_KEYWORDS_MESSAGE), reply_markup=keyboards.get_keyboard(question, is_multians=True))
 
 
 @dp.message_handler(commands=['bayes'])
 async def bayes_algorithm_start(message: types.Message):
     bayes_session = bot_data.get_bayes_session(message.from_user.id)
     question = bayes_session.get_question()
-    await message.answer(Messages.START_BAYES_ALGORITHM)
-    question_text = question[0]
-    await message.answer(text=question_text, reply_markup=keyboards.get_scale_keyboard())
+    await message.answer(translate_to_russian(Messages.START_BAYES_ALGORITHM))
+    question_text = question['text']
+    await message.answer(text=translate_to_russian(question_text), reply_markup=keyboards.get_scale_keyboard())
 
 
 @dp.message_handler(commands=['liked'])
