@@ -11,6 +11,7 @@ from compare_keywords import choose_gifts
 from states import States
 from config import get_token_from_dotenv
 import keyboards
+from consts import Commands, Messages, Emojis
 
 logging.basicConfig(level=logging.INFO)
 
@@ -19,17 +20,15 @@ dp = Dispatcher(bot, storage=MemoryStorage())
 
 dp.middleware.setup(LoggingMiddleware())
 
-check_mark_emoji = '✅'
-
 
 async def set_default_commands():
     await dp.bot.set_my_commands([
-        types.BotCommand('start', 'Start bot'),
-        types.BotCommand('help', 'Get Help'),
-        types.BotCommand('compare_keywords', 'Compare keywords algorithm'),
-        types.BotCommand('tree_algorithm', 'Tree algorithm'),
-        types.BotCommand('liked', 'Your liked products'),
-        types.BotCommand('bayes', 'Bayes Algorithm')
+        types.BotCommand('start', Commands.START_COMMAND),
+        types.BotCommand('help', Commands.HELP_COMMAND),
+        types.BotCommand('compare_keywords', Commands.KEYWORDS_ALGORITHM_COMMAND),
+        types.BotCommand('tree_algorithm', Commands.TREE_ALGORITHM_COMMAND),
+        types.BotCommand('bayes', Commands.BAYES_ALGORITHM_COMMAND),
+        types.BotCommand('liked', Commands.LIKED_COMMAND)
     ])
 
 
@@ -43,7 +42,7 @@ def get_product_text(product: dict):
 async def show_products(user_id, products: list):
     product_index = 0
     if len(products) == 0:
-        await bot.send_message(user_id, 'Your liked products is empty')
+        await bot.send_message(user_id, Messages.LIKED_EMPTY_MESSAGE)
         return
     product = products[product_index]
     await bot.send_message(
@@ -63,7 +62,7 @@ async def show_products(user_id, products: list):
         elif action == 'unlike':
             users_db_functions.remove_from_favourite(user_id=user_id, product_id=int(product['id']))
             if len(products) == 0:
-                await bot.send_message(user_id, 'Your liked products is empty')
+                await bot.send_message(user_id, Messages.LIKED_EMPTY_MESSAGE)
                 await query.answer()
                 return
             await query.message.edit_reply_markup(reply_markup=await keyboards.get_product_keyboard(user_id, product))
@@ -83,7 +82,7 @@ async def show_products(user_id, products: list):
 async def compare_keywords_start(message: types.Message):
     state = dp.current_state(user=message.from_user.id)
     await state.set_state(States.WAITING_KEYWORDS[0])
-    await message.answer('Start "Compare Keywords" algorithm...')
+    await message.answer(Messages.START_KEYWORDS_ALGORITHM_MESSAGE)
 
 
 @dp.message_handler(state=States.WAITING_KEYWORDS)
@@ -101,13 +100,13 @@ def get_answers_by_query(callback_query: CallbackQuery):
 
 @dp.message_handler(commands=['start'])
 async def start_command(message: types.Message):
-    await message.reply('start message...')
+    await message.reply(Messages.START_MESSAGE)
 
 
 @dp.message_handler(commands=['help'])
 async def help_command(message: types.Message):
     await set_default_commands()
-    await message.reply('help message...')
+    await message.reply(Messages.HELP_MESSAGE)
 
 
 @dp.callback_query_handler(Text(startswith='scale_'))
@@ -131,8 +130,8 @@ async def callback_multians(query: CallbackQuery):
     if action == 'confirm':
         selected_answers = []
         for answer in answers_list:
-            if check_mark_emoji in answer:
-                selected_answers.append(answer.replace(' ' + check_mark_emoji, ''))
+            if Emojis.CHECK_MARK_EMOJI in answer:
+                selected_answers.append(answer.replace(' ' + Emojis.CHECK_MARK_EMOJI, ''))
         tree_session = bot_data.get_tree_session(query.from_user.id)
         products = tree_session.new_answer(selected_answers)
         if len(products) > 0:
@@ -141,15 +140,15 @@ async def callback_multians(query: CallbackQuery):
             return
         question = tree_session.get_question()
         print(question)
-        await query.message.answer('Select Keyword', reply_markup=keyboards.get_keyboard(question, is_multians=True))
+        await query.message.answer(Messages.SELECT_KEYWORDS_MESSAGE, reply_markup=keyboards.get_keyboard(question, is_multians=True))
         await query.answer()
         return
 
     ans_index = int(action)
-    if check_mark_emoji not in answers_list[ans_index]:
-        answers_list[ans_index] += ' ' + check_mark_emoji
+    if Emojis.CHECK_MARK_EMOJI not in answers_list[ans_index]:
+        answers_list[ans_index] += ' ' + Emojis.CHECK_MARK_EMOJI
     else:
-        answers_list[ans_index] = answers_list[ans_index].replace(' ' + check_mark_emoji, '')
+        answers_list[ans_index] = answers_list[ans_index].replace(' ' + Emojis.CHECK_MARK_EMOJI, '')
     await query.message.edit_reply_markup(keyboards.get_keyboard(answers_list, is_multians=True))
     await query.answer()
 
@@ -158,15 +157,15 @@ async def callback_multians(query: CallbackQuery):
 async def tree_algorithm_start(message: types.Message):
     tree_session = bot_data.get_tree_session(message.from_user.id)
     question = tree_session.get_question()
-    await message.answer('Start "Tree" algorithm')
-    await message.answer('Select Keyword', reply_markup=keyboards.get_keyboard(question, is_multians=True))
+    await message.answer(Messages.START_TREE_ALGORITHM)
+    await message.answer(Messages.SELECT_KEYWORDS_MESSAGE, reply_markup=keyboards.get_keyboard(question, is_multians=True))
 
 
 @dp.message_handler(commands=['bayes'])
 async def bayes_algorithm_start(message: types.Message):
     bayes_session = bot_data.get_bayes_session(message.from_user.id)
     question = bayes_session.get_question()
-    await message.answer('Start "Bayes" algorithm')
+    await message.answer(Messages.START_BAYES_ALGORITHM)
     question_text = question[0]
     await message.answer(text=question_text, reply_markup=keyboards.get_scale_keyboard())
 
