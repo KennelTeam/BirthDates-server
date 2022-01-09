@@ -1,6 +1,7 @@
 import statistics
 from clustering_graph_db_functions import get_root_clusters, get_child_clusters, get_cluster_products
 from db_functions import get_product, get_products
+from pprint import pprint
 
 
 def words_to_ask(clusters_list):
@@ -19,16 +20,20 @@ def words_to_ask(clusters_list):
     sd_weights.sort(reverse=True)
     k_ask_words = min(15, len(sd_weights))
     words = [word for _, word in sd_weights[:k_ask_words]]
+    pprint(words)
     return words
 
 
 def choose_cluster(choosed_words, cluster_list):
+    # print(choosed_words)
+
     cluster_points = [0] * len(cluster_list)
     for idx, (cl_idx, cl) in enumerate(cluster_list):
         for word in choosed_words:
             cluster_points[idx] += cl.get(word, 0)
     max_cl = max(cluster_points)
     max_cl_idx = cluster_points.index(max_cl)
+    # print("cluster_id: {}".format(max_cl_idx))
     return max_cl_idx
 
 
@@ -37,7 +42,6 @@ def user_choose(clusters_list):
     print("Choose words, that describes your friend better then others (write numbers dividing with space):")
     for idx, w in enumerate(words):
         print(str(idx + 1) + ') ' + w, end='\n')
-    print()
     ans = [words[int(i) - 1] for i in input().split()]
     return choose_cluster(ans, clusters_list)
 
@@ -49,11 +53,19 @@ class TreeSession:
         self.products = []
 
     def new_answer(self, answers):
+        pprint(self.clusters)
         new_cluster_id = self.clusters[choose_cluster(answers, self.clusters)][0]
         self.clusters = get_child_clusters(new_cluster_id)
+        pprint(self.clusters)
+        print("clusters")
+        while len(self.clusters) == 1:
+            self.clusters = get_child_clusters(self.clusters[0])
         if len(self.clusters) == 0:
             product_ids = get_cluster_products(new_cluster_id)
-            self.products = get_products(product_ids).values()
+            pprint(product_ids)
+            self.products = list(get_products(product_ids).values())
+            pprint(self.products)
+            print("products")
         else:
             self.words = words_to_ask(self.clusters)
         return self.products

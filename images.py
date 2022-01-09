@@ -47,6 +47,7 @@ class Product(Base):
 
     def to_json(self):
         return {
+            "id": self.id,
             "asin": self.amazon_id,
             "link": "https://amazon.com/dp/" + self.amazon_id,
             "cost": self.cost,
