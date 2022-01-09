@@ -31,3 +31,14 @@ def get_product(product_id: int):
 def get_products(product_ids: list):
     data = SessionManager().session().query(Product).filter(Product.id.in_(product_ids)).all()
     return {item.id: item.to_json() for item in data}
+
+
+def get_all_products_keywords():
+    data = SessionManager().session().query(ProductKeyword, Keyword) \
+        .filter(ProductKeyword.keyword_id == Keyword.id).all()
+    result = {}
+    for pair, keyword in data:
+        if pair.product_id not in result.keys():
+            result[pair.product_id] = {}
+        result[pair.product_id][keyword.word] = pair.weight
+    return result

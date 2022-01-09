@@ -1,29 +1,80 @@
-from compare_keywords import compare_word_lists
+from compare_keywords import compare_word_lists, compare_word_list_precalced, prepare_calcs
 from keywords import get_keywords_koe
 from sklearn.naive_bayes import MultinomialNB
-from db_functions import get_product
+from db_functions import get_product, get_all_products_keywords
 import random
 import pickle
 import numpy as np
+from questions_db_functions import get_all_questions
+from tqdm import tqdm
+import multiprocessing as mp
+import threading as tr
+import json
+from math import ceil
+from nltk.corpus import wordnet as wn
 
 
 K_PRODUCTS = 15
-QUESTIONS = [("Likes to cook?",  ['cook', 'food', 'taste']), ("Likes to draw?", ['painting', 'art'])]
+QUESTIONS = None
+
+mutex_nltk = tr.Lock()
+mutex_files = tr.Lock()
+
+
+def train_all():
+    print("precalcing synsets")
+    prepare_calcs()
+    print("getting all questions")
+    global QUESTIONS
+    QUESTIONS = get_all_questions()
+    print("all questions got")
+    products = get_all_products_keywords()
+    print("all products got")
+    answers, product_ids = prepare_dataset(products, QUESTIONS)
+    print("dataset prepared")
+    train_nn(answers, product_ids)
+    print("network saved")
+
 
 def predict_user_answer(q_keywords: list, product_keywords: dict):
     q_keywords_dict = {word: 1 for word in q_keywords}
-    similarity = compare_word_lists(q_keywords_dict, product_keywords)
-    return 1 if similarity > 0.06 else 0
+    similarity = compare_word_list_precalced(product_keywords, q_keywords_dict)
+    result = 1 if similarity > 0.06 else 0
+    # q.put(result)
+    return result
+
+
+def do_batch(products, batch_id, q_keywords):
+    print(f'Batch {batch_id} started')
+    answers = []
+    for product in products:
+        print(product)
+        result = []
+        for q in q_keywords:
+            # with mutex_nltk:
+            result.append(predict_user_answer(q, product))
+        answers.append(result)
+
+    with mutex_files:
+        with open(f'multiproc/{batch_id}.json', 'w') as f:
+            f.write(json.dumps(answers))
+
+    print(f'Finished batch {batch_id}')
 
 
 def prepare_dataset(products_keywords: dict, question_keywords: list):
+    q_keywords = [q['keywords'] for q in question_keywords]
+
     answers = list()
+    product_keyword_list = list(products_keywords.items())
+    # product_ids, products = zip(*product_keyword_list)
     product_ids = []
-    for product_id, product in products_keywords.items():
-        answers.append([])
+    for product_id, product in tqdm(product_keyword_list):
         product_ids.append(product_id)
-        for q in question_keywords:
-            answers[-1].append(predict_user_answer(q, product))
+        result = []
+        for q in q_keywords:
+            result.append(predict_user_answer(q, product))
+        answers.append(result)
     return answers, product_ids
 
 

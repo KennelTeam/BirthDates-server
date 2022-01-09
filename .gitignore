@@ -3,7 +3,7 @@ venv/
 .env
 __pycache__/
 test.*
-
+*.model
 *.json
 *.html
 *.txt
