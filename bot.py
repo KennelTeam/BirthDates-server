@@ -1,4 +1,5 @@
 import logging
+import time
 
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import CallbackQuery
@@ -16,6 +17,8 @@ import keyboards
 from consts import Commands, Messages, Emojis
 from translator import translate_to_russian
 
+print('Started bot')
+time.sleep(5)
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=get_token_from_dotenv())
