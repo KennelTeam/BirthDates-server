@@ -37,9 +37,9 @@ def train_all():
     # The first step is to precalculate synset.wup_similarities for each pair of keywords from question and
     # from product. This step is needed to speed up computations
     print("precalcing synsets")
-    # prepare_calcs()
+    prepare_calcs()
     # or load precalcs from json
-    load_calcs()
+    # load_calcs()
     # The second step is pulling all questions from DataBase
     print("getting all questions")
     global QUESTIONS
