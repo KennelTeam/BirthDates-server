@@ -72,11 +72,16 @@ class TreeSession:
         pprint(self.clusters)
         new_cluster_id = self.clusters[choose_cluster(
             answers, self.clusters)][0]
+        pprint(new_cluster_id)
+        pprint("new cluster id")
         self.clusters = get_child_clusters(new_cluster_id)
         pprint(self.clusters)
         print("clusters")
         while len(self.clusters) == 1:
-            self.clusters = get_child_clusters(self.clusters[0])
+            pprint(self.clusters[0][0])
+            pprint("self clusters 0")
+            new_cluster_id = self.clusters[0][0]
+            self.clusters = get_child_clusters(self.clusters[0][0])
         if len(self.clusters) == 0:
             product_ids = get_cluster_products(new_cluster_id)
             pprint(product_ids)

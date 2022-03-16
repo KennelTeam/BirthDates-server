@@ -1,6 +1,8 @@
 # copyright KennelTeam
 # AndrusovN for any questions
 # file with main functions to work with clustering database part
+import time
+
 from SessionManager import SessionManager
 from clustering_graph_db import ClusterProductToCluster, ClusterParentToChild, ClusterToKeyword, Cluster
 from images import Keyword
