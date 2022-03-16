@@ -9,6 +9,7 @@
 # and train sklearn.naive_bayes.MultinomialNB on that data
 # Then save it to Bayes-model.model file and use
 # It is planned to add training based on user's answers
+from pprint import pprint
 
 from compare_keywords import compare_word_lists, compare_word_list_precalced, prepare_calcs, load_calcs
 from keywords import get_keywords_koe
@@ -103,8 +104,10 @@ def choose_gifts(user_answers):
     with open('Bayes_model_bytes.model', 'rb') as model_file:
         clf = pickle.loads(model_file.read())
     ans = clf.predict_proba(np.array(user_answers).reshape(1, -1))
-    product_ids = clf.classes_[np.flip(np.argsort(ans))][:K_PRODUCTS][0]
-    print(product_ids)
+    product_ids = clf.classes_[np.flip(np.argsort(ans))]
+    pprint(product_ids)
+    product_ids = product_ids[0][:K_PRODUCTS]
+    pprint(product_ids)
     print("products")
     products = get_products(list(product_ids))
     return [products[i] for i in product_ids]

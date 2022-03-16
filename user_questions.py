@@ -61,6 +61,8 @@ class TreeSession:
     """Class for interaction between bot and algorithm functions"""
     def __init__(self):
         self.clusters = get_root_clusters()
+        pprint(self.clusters)
+        print("CLUSTERS")
         self.words = words_to_ask(self.clusters)
         self.products = []
 
