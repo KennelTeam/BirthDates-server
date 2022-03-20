@@ -171,7 +171,8 @@ async def callback_multians(query: CallbackQuery):
 
 @dp.message_handler(commands=['tree_algorithm'])
 async def tree_algorithm_start(message: types.Message):
-    tree_session = bot_data.get_tree_session(message.from_user.id)
+    print("STARTING TREE ALGORITHM")
+    tree_session = bot_data.create_tree_session(message.from_user.id)
     question = tree_session.get_question()
     await message.answer(translate_to_russian(Messages.START_TREE_ALGORITHM))
     await message.answer(translate_to_russian(Messages.SELECT_KEYWORDS_MESSAGE), reply_markup=keyboards.get_keyboard(question, is_multians=True))

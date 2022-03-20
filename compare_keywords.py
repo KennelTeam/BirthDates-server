@@ -166,6 +166,8 @@ def choose_gifts(information: str):
     """Gets string with information about person and returns information about products in list of dicts"""
     print("choosing gift")
     user_keywords = get_keywords_koe(information)
+    if len(user_keywords) == 0:
+        print("AAAAAAAAAAAAAAAAAAAAA\n\n\n\n\n\n\nLENGTH OF USERS IS 0")
     max_similarity = 0
     max_cluster_id = -1
     print("getting clusters")
@@ -175,6 +177,9 @@ def choose_gifts(information: str):
     for i in tqdm(range(len(clusters) // MAX_THREADS_COUNT)):
         begin_index, end_index = i * MAX_THREADS_COUNT, min(len(clusters), (i + 1)*MAX_THREADS_COUNT)
         current_batch = clusters[begin_index:end_index]
+        if len(current_batch) == 0:
+            print("AAAAAAAAAAAAAAAAAAAAA\n\n\n\n\n\n\nLENGTH OF CURRENT BATCH IS 0")
+            continue
         # similarities += calc_similarities_threaded(current_batch, user_keywords)
         similarities += calc_similarities(current_batch, user_keywords)
 
